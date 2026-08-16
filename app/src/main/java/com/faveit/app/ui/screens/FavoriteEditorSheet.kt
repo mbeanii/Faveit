@@ -1,7 +1,9 @@
 package com.faveit.app.ui.screens
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -32,7 +34,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -40,6 +42,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.faveit.app.model.DisplayItem
@@ -47,6 +50,8 @@ import com.faveit.app.model.FaveCategory
 import com.faveit.app.model.FavoriteOverride
 import com.faveit.app.model.GemPalette
 import com.faveit.app.ui.theme.colors
+
+private const val MAX_DISPLAY_NAME_CODE_POINTS = 60
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -57,13 +62,19 @@ fun FavoriteEditorSheet(
     onReset: (String) -> Unit,
     onRemove: (String) -> Unit,
 ) {
-    var displayName by remember(item.id) { mutableStateOf(item.displayName) }
-    var category by remember(item.id) { mutableStateOf(item.category) }
-    var palette by remember(item.id) { mutableStateOf(item.palette) }
-    var confirmRemove by remember { mutableStateOf(false) }
+    var displayName by rememberSaveable(item.id) { mutableStateOf(item.displayName) }
+    var category by rememberSaveable(item.id) { mutableStateOf(item.category) }
+    var palette by rememberSaveable(item.id) { mutableStateOf(item.palette) }
+    var confirmRemove by rememberSaveable(item.id) { mutableStateOf(false) }
 
     ModalBottomSheet(onDismissRequest = onDismiss) {
-        Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(bottom = 24.dp)) {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 20.dp)
+                .padding(bottom = 24.dp),
+        ) {
             Text("Make it yours", style = MaterialTheme.typography.headlineMedium)
             Text(
                 "Saved on this device; Android backup may transfer changes.",
@@ -72,7 +83,7 @@ fun FavoriteEditorSheet(
             )
             OutlinedTextField(
                 value = displayName,
-                onValueChange = { displayName = it.take(60) },
+                onValueChange = { displayName = it.takeCodePoints(MAX_DISPLAY_NAME_CODE_POINTS) },
                 modifier = Modifier.fillMaxWidth().testTag("custom_name"),
                 label = { Text("Display name") },
                 singleLine = true,
@@ -164,7 +175,14 @@ fun FavoriteEditorSheet(
 private fun GemStyleOption(palette: GemPalette, selected: Boolean, onClick: () -> Unit) {
     val colors = palette.colors()
     Column(
-        Modifier.clip(RoundedCornerShape(14.dp)).clickable(onClick = onClick).padding(5.dp),
+        Modifier
+            .clip(RoundedCornerShape(14.dp))
+            .selectable(
+                selected = selected,
+                onClick = onClick,
+                role = Role.RadioButton,
+            )
+            .padding(5.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Box(
@@ -181,4 +199,11 @@ private fun GemStyleOption(palette: GemPalette, selected: Boolean, onClick: () -
             modifier = Modifier.padding(top = 4.dp),
         )
     }
+}
+
+internal fun String.takeCodePoints(maxCodePoints: Int): String {
+    require(maxCodePoints >= 0) { "maxCodePoints must be non-negative" }
+    if (codePointCount(0, length) <= maxCodePoints) return this
+    val endIndex = offsetByCodePoints(0, maxCodePoints)
+    return substring(0, endIndex)
 }
