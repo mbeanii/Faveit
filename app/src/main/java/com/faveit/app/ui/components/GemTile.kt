@@ -9,6 +9,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -59,6 +60,7 @@ fun GemTile(
     editable: Boolean = false,
     muted: Boolean = false,
     compact: Boolean = false,
+    selectionMode: Boolean = false,
 ) {
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
@@ -67,6 +69,11 @@ fun GemTile(
     val view = LocalView.current
     val gems = palette.colors()
     val tileShape = RoundedCornerShape(if (compact) 18.dp else 22.dp)
+    val activate = {
+        haptics.performHapticFeedback(HapticFeedbackType.Confirm)
+        view.playSoundEffect(SoundEffectConstants.CLICK)
+        onClick()
+    }
 
     Box(
         modifier = modifier
@@ -88,15 +95,24 @@ fun GemTile(
                 ),
             )
             .border(1.dp, Color.White.copy(alpha = if (muted) 0.12f else 0.42f), tileShape)
-            .clickable(
-                interactionSource = interaction,
-                indication = null,
-                role = Role.Button,
-            ) {
-                haptics.performHapticFeedback(HapticFeedbackType.Confirm)
-                view.playSoundEffect(SoundEffectConstants.CLICK)
-                onClick()
-            }
+            .then(
+                if (selectionMode) {
+                    Modifier.toggleable(
+                        value = selected,
+                        interactionSource = interaction,
+                        indication = null,
+                        role = Role.Checkbox,
+                        onValueChange = { activate() },
+                    )
+                } else {
+                    Modifier.clickable(
+                        interactionSource = interaction,
+                        indication = null,
+                        role = Role.Button,
+                        onClick = activate,
+                    )
+                },
+            )
             .alpha(if (muted) 0.74f else 1f),
     ) {
         Canvas(Modifier.fillMaxSize()) {
@@ -137,7 +153,7 @@ fun GemTile(
                     ) {
                         Icon(
                             Icons.Rounded.Check,
-                            "Selected",
+                            if (selectionMode) null else "Selected",
                             tint = gems.dark,
                             modifier = Modifier.padding(3.dp),
                         )

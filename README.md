@@ -20,7 +20,8 @@ system, or advertising surface. The user’s own favorites are the authority.
 - Explicitly opt-in, non-annoying weekly local reminders in the form
   `Remember In-N-Out?`.
 - Glossy gemstone surfaces rendered by Compose from gradients and facets, with
-  press animation and haptic feedback. No commercial artwork is bundled.
+  press animation, haptics, click feedback, and accessible state semantics. No
+  commercial artwork is bundled.
 
 See [START_HERE.md](START_HERE.md) for the current validation receipt and a
 short return-to-project guide.
@@ -55,8 +56,10 @@ Validation commands:
   components, and visual theme.
 - `app/src/main/java/com/faveit/app/notifications` — opt-in WorkManager schedule
   and local notification delivery.
-- `app/src/test` — search, persistence-codec, and catalog contract tests.
-- `app/src/androidTest` — compiled end-to-end Compose journey.
+- `app/src/test` — search, persistence-codec, projection, reminder-copy, and
+  catalog contract tests.
+- `app/src/androidTest` — two end-to-end Compose journeys plus deterministic
+  setup and accessibility-semantics coverage.
 
 ## Data and privacy
 

@@ -17,6 +17,20 @@ data class FaveitSnapshot(
     val favorites: List<DisplayItem> get() = items.filter { it.isFavorite }
 }
 
+internal fun resolveDisplayItems(
+    catalog: List<CatalogItem>,
+    preferences: UserPreferences,
+): List<DisplayItem> = catalog.map { source ->
+    val override = preferences.overrides[source.id]
+    DisplayItem(
+        source = source,
+        displayName = override?.displayName ?: source.name,
+        category = override?.category ?: source.category,
+        palette = override?.palette ?: source.palette,
+        isFavorite = source.id in preferences.favoriteIds,
+    )
+}
+
 class FaveitRepository(context: Context) {
     val catalog: List<CatalogItem> = CatalogLoader(context).load()
     private val preferencesStore = UserPreferencesStore(context)
@@ -24,16 +38,7 @@ class FaveitRepository(context: Context) {
     val snapshot: Flow<FaveitSnapshot> = preferencesStore.preferences.map { preferences ->
         FaveitSnapshot(
             catalog = catalog,
-            items = catalog.map { source ->
-                val override = preferences.overrides[source.id]
-                DisplayItem(
-                    source = source,
-                    displayName = override?.displayName ?: source.name,
-                    category = override?.category ?: source.category,
-                    palette = override?.palette ?: source.palette,
-                    isFavorite = source.id in preferences.favoriteIds,
-                )
-            },
+            items = resolveDisplayItems(catalog, preferences),
             setupComplete = preferences.setupComplete,
             remindersEnabled = preferences.remindersEnabled,
             notificationPermissionDenied = preferences.notificationPermissionDenied,

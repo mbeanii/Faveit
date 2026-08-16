@@ -18,6 +18,8 @@ import com.faveit.app.MainActivity
 import com.faveit.app.R
 import kotlinx.coroutines.flow.first
 
+internal fun reminderTitle(displayName: String): String = "Remember $displayName?"
+
 class FavoriteReminderWorker(
     appContext: Context,
     params: WorkerParameters,
@@ -53,7 +55,7 @@ class FavoriteReminderWorker(
         }
         val notification = builder
             .setSmallIcon(R.drawable.ic_notification)
-            .setContentTitle("Remember ${favorite.displayName}?")
+            .setContentTitle(reminderTitle(favorite.displayName))
             .setContentIntent(openApp)
             .setAutoCancel(true)
             .setCategory(Notification.CATEGORY_REMINDER)
