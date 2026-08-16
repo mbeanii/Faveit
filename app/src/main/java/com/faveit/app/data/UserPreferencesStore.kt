@@ -25,7 +25,7 @@ data class UserPreferences(
     val overrides: Map<String, FavoriteOverride> = emptyMap(),
     val setupComplete: Boolean = false,
     val remindersEnabled: Boolean = false,
-    val notificationPermissionRequested: Boolean = false,
+    val notificationPermissionDenied: Boolean = false,
 )
 
 class UserPreferencesStore(context: Context) {
@@ -85,8 +85,8 @@ class UserPreferencesStore(context: Context) {
         dataStore.edit { it[REMINDERS_ENABLED] = enabled }
     }
 
-    suspend fun markNotificationPermissionRequested() {
-        dataStore.edit { it[NOTIFICATION_PERMISSION_REQUESTED] = true }
+    suspend fun markNotificationPermissionDenied() {
+        dataStore.edit { it[NOTIFICATION_PERMISSION_DENIED] = true }
     }
 
     private fun decode(values: Preferences): UserPreferences {
@@ -97,7 +97,7 @@ class UserPreferencesStore(context: Context) {
             overrides = overrides,
             setupComplete = values[SETUP_COMPLETE] ?: false,
             remindersEnabled = values[REMINDERS_ENABLED] ?: false,
-            notificationPermissionRequested = values[NOTIFICATION_PERMISSION_REQUESTED] ?: false,
+            notificationPermissionDenied = values[NOTIFICATION_PERMISSION_DENIED] ?: false,
         )
     }
 
@@ -106,7 +106,7 @@ class UserPreferencesStore(context: Context) {
         val OVERRIDES = stringSetPreferencesKey("favorite_overrides")
         val SETUP_COMPLETE = booleanPreferencesKey("setup_complete")
         val REMINDERS_ENABLED = booleanPreferencesKey("reminders_enabled")
-        val NOTIFICATION_PERMISSION_REQUESTED =
-            booleanPreferencesKey("notification_permission_requested")
+        val NOTIFICATION_PERMISSION_DENIED =
+            booleanPreferencesKey("notification_permission_denied")
     }
 }

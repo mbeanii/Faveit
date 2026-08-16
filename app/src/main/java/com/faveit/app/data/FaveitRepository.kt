@@ -12,7 +12,7 @@ data class FaveitSnapshot(
     val items: List<DisplayItem>,
     val setupComplete: Boolean,
     val remindersEnabled: Boolean,
-    val notificationPermissionRequested: Boolean,
+    val notificationPermissionDenied: Boolean,
 ) {
     val favorites: List<DisplayItem> get() = items.filter { it.isFavorite }
 }
@@ -36,7 +36,7 @@ class FaveitRepository(context: Context) {
             },
             setupComplete = preferences.setupComplete,
             remindersEnabled = preferences.remindersEnabled,
-            notificationPermissionRequested = preferences.notificationPermissionRequested,
+            notificationPermissionDenied = preferences.notificationPermissionDenied,
         )
     }
 
@@ -48,7 +48,7 @@ class FaveitRepository(context: Context) {
     suspend fun resetOverride(itemId: String) = preferencesStore.resetOverride(itemId)
     suspend fun completeSetup() = preferencesStore.completeSetup()
     suspend fun setRemindersEnabled(enabled: Boolean) = preferencesStore.setRemindersEnabled(enabled)
-    suspend fun markNotificationPermissionRequested() =
-        preferencesStore.markNotificationPermissionRequested()
+    suspend fun markNotificationPermissionDenied() =
+        preferencesStore.markNotificationPermissionDenied()
     suspend fun currentPreferences(): UserPreferences = preferencesStore.current()
 }

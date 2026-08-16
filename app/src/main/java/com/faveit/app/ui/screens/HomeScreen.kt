@@ -2,6 +2,8 @@ package com.faveit.app.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -42,6 +44,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -67,62 +70,90 @@ fun HomeScreen(
     onReminders: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(
-        modifier.fillMaxSize().padding(horizontal = 16.dp).padding(top = 8.dp, bottom = 12.dp),
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                Text("Faveit", style = MaterialTheme.typography.displaySmall)
+    BoxWithConstraints(modifier.fillMaxSize()) {
+        val categoryScrollState = rememberScrollState()
+        val useScrollableCategories = query.isBlank() &&
+            (maxHeight < 520.dp || LocalDensity.current.fontScale > 1.15f)
+        val constrainedGridHeight = if (maxWidth > maxHeight) 240.dp else 480.dp
+        Column(
+            Modifier.fillMaxSize()
+                .padding(horizontal = 16.dp)
+                .padding(top = 8.dp, bottom = 12.dp)
+                .then(
+                    if (useScrollableCategories) Modifier.verticalScroll(categoryScrollState)
+                    else Modifier,
+                ),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text("Faveit", style = MaterialTheme.typography.displaySmall)
+                    Text(
+                        "Your taste. On demand.",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.labelMedium,
+                    )
+                }
+                IconButton(onClick = onReminders, modifier = Modifier.testTag("reminder_button")) {
+                    Icon(
+                        if (remindersEnabled) {
+                            Icons.Rounded.NotificationsActive
+                        } else {
+                            Icons.Rounded.Notifications
+                        },
+                        contentDescription = "Favorite reminders",
+                        tint = if (remindersEnabled) {
+                            EmeraldAccent
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                    )
+                }
+            }
+            Spacer(Modifier.height(10.dp))
+            TextField(
+                value = query,
+                onValueChange = onQueryChange,
+                modifier = Modifier.fillMaxWidth().testTag("global_search"),
+                placeholder = { Text("What do I love?") },
+                leadingIcon = { Icon(Icons.Rounded.Search, null) },
+                trailingIcon = {
+                    if (query.isNotEmpty()) IconButton(onClick = { onQueryChange("") }) {
+                        Icon(Icons.Rounded.Clear, "Clear search")
+                    }
+                },
+                singleLine = true,
+                shape = RoundedCornerShape(22.dp),
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                keyboardActions = KeyboardActions(onSearch = {}),
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = SoftInk,
+                    unfocusedContainerColor = SoftInk,
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent,
+                ),
+            )
+            Spacer(Modifier.height(12.dp))
+
+            if (query.isBlank()) {
                 Text(
-                    "Your taste. On demand.",
+                    "FIND A FAVORITE",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.labelMedium,
+                    letterSpacing = 1.sp,
                 )
-            }
-            IconButton(onClick = onReminders, modifier = Modifier.testTag("reminder_button")) {
-                Icon(
-                    if (remindersEnabled) Icons.Rounded.NotificationsActive else Icons.Rounded.Notifications,
-                    contentDescription = "Favorite reminders",
-                    tint = if (remindersEnabled) EmeraldAccent else MaterialTheme.colorScheme.onSurfaceVariant,
+                Spacer(Modifier.height(8.dp))
+                CategoryGrid(
+                    favoriteCounts,
+                    onCategory,
+                    if (useScrollableCategories) {
+                        Modifier.fillMaxWidth().height(constrainedGridHeight)
+                    } else {
+                        Modifier.weight(1f)
+                    },
                 )
+            } else {
+                SearchResults(query, results, onAdd, Modifier.weight(1f))
             }
-        }
-        Spacer(Modifier.height(10.dp))
-        TextField(
-            value = query,
-            onValueChange = onQueryChange,
-            modifier = Modifier.fillMaxWidth().testTag("global_search"),
-            placeholder = { Text("What do I love?") },
-            leadingIcon = { Icon(Icons.Rounded.Search, null) },
-            trailingIcon = {
-                if (query.isNotEmpty()) IconButton(onClick = { onQueryChange("") }) {
-                    Icon(Icons.Rounded.Clear, "Clear search")
-                }
-            },
-            singleLine = true,
-            shape = RoundedCornerShape(22.dp),
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-            keyboardActions = KeyboardActions(onSearch = {}),
-            colors = TextFieldDefaults.colors(
-                focusedContainerColor = SoftInk,
-                unfocusedContainerColor = SoftInk,
-                focusedIndicatorColor = Color.Transparent,
-                unfocusedIndicatorColor = Color.Transparent,
-            ),
-        )
-        Spacer(Modifier.height(12.dp))
-
-        if (query.isBlank()) {
-            Text(
-                "FIND A FAVORITE",
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.labelMedium,
-                letterSpacing = 1.sp,
-            )
-            Spacer(Modifier.height(8.dp))
-            CategoryGrid(favoriteCounts, onCategory, Modifier.weight(1f))
-        } else {
-            SearchResults(query, results, onAdd, Modifier.weight(1f))
         }
     }
 }

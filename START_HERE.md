@@ -18,13 +18,14 @@ configuration on any API 23+ device. From a configured terminal:
 ```
 
 Current debug artifact: `app/build/outputs/apk/debug/app-debug.apk`.
-SHA-256: `28bad8a25987284ac3f400c4fd3ca1e3bc4329b749471dd07d894d51988e6010`.
+SHA-256: `f9bca5007047358a8c0d99c231c981a07cd2be7d9091e8b7b917aae959cf3422`.
 
 ## What was validated
 
-- `testDebugUnitTest`: 11 passing tests covering punctuation/alias/diacritic,
+- `testDebugUnitTest`: 16 passing tests covering punctuation/alias/diacritic,
   non-Latin and emoji-only search, supplementary-character name limits,
-  malformed and Unicode override persistence, and the 96-item catalog contract.
+  malformed and Unicode override persistence, the 96-item catalog contract,
+  and notification first-request/dismissal/denial policy.
 - `assembleDebug`: passing; installable debug APK produced (about 20 MB).
 - `assembleRelease`: passing through R8, Compose mapping, release lint, and
   resource shrinking; an unsigned release APK is produced for signing later.

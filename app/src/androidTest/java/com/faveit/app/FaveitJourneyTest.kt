@@ -12,6 +12,8 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
+import kotlinx.coroutines.runBlocking
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -21,6 +23,11 @@ class FaveitJourneyTest {
     @get:Rule val composeRule = createAndroidComposeRule<MainActivity>()
 
     @Test fun setupSearchAddAndRecallRestaurant() {
+        val app = InstrumentationRegistry.getInstrumentation().targetContext.applicationContext
+            as FaveitApplication
+        runBlocking { app.repository.removeFavorite("restaurant_in_n_out") }
+        composeRule.waitForIdle()
+
         if (composeRule.onAllNodesWithText("Skip").fetchSemanticsNodes().isNotEmpty()) {
             composeRule.onNodeWithText("Skip").performClick()
         }

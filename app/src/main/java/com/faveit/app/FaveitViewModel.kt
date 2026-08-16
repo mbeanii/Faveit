@@ -28,7 +28,7 @@ class FaveitViewModel(application: Application) : AndroidViewModel(application) 
         },
         setupComplete = false,
         remindersEnabled = false,
-        notificationPermissionRequested = false,
+        notificationPermissionDenied = false,
     )
 
     val uiState: StateFlow<FaveitUiState> = repository.snapshot
@@ -81,7 +81,7 @@ class FaveitViewModel(application: Application) : AndroidViewModel(application) 
         else ReminderScheduler.cancel(getApplication())
     }
 
-    fun markNotificationPermissionRequested() = viewModelScope.launch {
-        repository.markNotificationPermissionRequested()
+    fun markNotificationPermissionDenied() = viewModelScope.launch {
+        repository.markNotificationPermissionDenied()
     }
 }

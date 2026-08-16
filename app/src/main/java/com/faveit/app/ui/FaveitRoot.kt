@@ -32,6 +32,7 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.faveit.app.FaveitViewModel
 import com.faveit.app.model.DisplayItem
@@ -48,6 +49,12 @@ import com.faveit.app.ui.theme.Ink
 private const val HOME = "home"
 private const val CATEGORY = "category"
 
+internal fun canRequestNotificationPermission(
+    isGranted: Boolean,
+    hasDeniedPermission: Boolean,
+    shouldShowRationale: Boolean,
+): Boolean = !isGranted && (!hasDeniedPermission || shouldShowRationale)
+
 @Composable
 fun FaveitRoot(viewModel: FaveitViewModel = viewModel()) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -59,20 +66,53 @@ fun FaveitRoot(viewModel: FaveitViewModel = viewModel()) {
     var query by rememberSaveable { mutableStateOf("") }
     var managedItemId by rememberSaveable { mutableStateOf<String?>(null) }
     var showReminderDialog by rememberSaveable { mutableStateOf(false) }
+    var notificationSettingsRevision by remember { mutableIntStateOf(0) }
+
+    LifecycleResumeEffect(Unit) {
+        notificationSettingsRevision += 1
+        onPauseOrDispose {}
+    }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
     ) { granted ->
-        if (granted) viewModel.setRemindersEnabled(true)
+        if (granted) {
+            viewModel.setRemindersEnabled(true)
+        } else if (activity?.let {
+                ActivityCompat.shouldShowRequestPermissionRationale(
+                    it,
+                    Manifest.permission.POST_NOTIFICATIONS,
+                )
+            } == true
+        ) {
+            viewModel.markNotificationPermissionDenied()
+        }
         showReminderDialog = false
+        notificationSettingsRevision += 1
     }
 
-    val notificationPermissionGranted = Build.VERSION.SDK_INT < 33 ||
-        ContextCompat.checkSelfPermission(
-            context, Manifest.permission.POST_NOTIFICATIONS,
+    val notificationPermissionGranted = remember(notificationSettingsRevision) {
+        Build.VERSION.SDK_INT < 33 || ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.POST_NOTIFICATIONS,
         ) == PackageManager.PERMISSION_GRANTED
-    val appNotificationsEnabled = NotificationManagerCompat.from(context).areNotificationsEnabled()
-    val reminderChannelEnabled = FavoriteReminderWorker.isChannelEnabled(context)
+    }
+    val notificationPermissionCanBeRequested = canRequestNotificationPermission(
+        isGranted = notificationPermissionGranted,
+        hasDeniedPermission = uiState.snapshot.notificationPermissionDenied,
+        shouldShowRationale = activity?.let {
+            ActivityCompat.shouldShowRequestPermissionRationale(
+                it,
+                Manifest.permission.POST_NOTIFICATIONS,
+            )
+        } == true,
+    )
+    val appNotificationsEnabled = remember(notificationSettingsRevision) {
+        NotificationManagerCompat.from(context).areNotificationsEnabled()
+    }
+    val reminderChannelEnabled = remember(notificationSettingsRevision) {
+        FavoriteReminderWorker.isChannelEnabled(context)
+    }
     val reminderDeliveryAvailable = notificationPermissionGranted &&
         appNotificationsEnabled && reminderChannelEnabled
 
@@ -179,17 +219,9 @@ fun FaveitRoot(viewModel: FaveitViewModel = viewModel()) {
             onEnable = {
                 when {
                     !notificationPermissionGranted -> {
-                        val canRequestPermission = !snapshot.notificationPermissionRequested ||
-                            activity?.let {
-                                ActivityCompat.shouldShowRequestPermissionRationale(
-                                    it,
-                                    Manifest.permission.POST_NOTIFICATIONS,
-                                )
-                            } == true
-                        if (canRequestPermission) {
-                            viewModel.markNotificationPermissionRequested()
-                            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                        } else openNotificationSettings()
+                        if (notificationPermissionCanBeRequested) permissionLauncher.launch(
+                            Manifest.permission.POST_NOTIFICATIONS,
+                        ) else openNotificationSettings()
                     }
                     !appNotificationsEnabled || !reminderChannelEnabled ->
                         openNotificationSettings()
