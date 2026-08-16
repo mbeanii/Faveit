@@ -17,17 +17,34 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun ReminderDialog(
     enabled: Boolean,
+    permissionGranted: Boolean,
     onDismiss: () -> Unit,
     onEnable: () -> Unit,
     onDisable: () -> Unit,
+    onRecoverPermission: () -> Unit,
 ) {
+    val needsPermission = enabled && !permissionGranted
     AlertDialog(
         onDismissRequest = onDismiss,
         icon = { Icon(Icons.Rounded.AutoAwesome, null, tint = MaterialTheme.colorScheme.primary) },
-        title = { Text(if (enabled) "Gentle reminders are on" else "Remember an old favorite") },
+        title = {
+            Text(
+                when {
+                    needsPermission -> "Notification access is off"
+                    enabled -> "Gentle reminders are on"
+                    else -> "Remember an old favorite"
+                },
+            )
+        },
         text = {
             Column {
-                Text("Faveit can send one simple local reminder each week, starting in a few days.")
+                Text(
+                    if (needsPermission) {
+                        "Android is blocking Faveit's weekly reminder. Open notification settings to restore it."
+                    } else {
+                        "Faveit can send one simple local reminder each week, starting in a few days."
+                    },
+                )
                 Text(
                     "Example: “Remember In-N-Out?”",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -42,10 +59,25 @@ fun ReminderDialog(
             }
         },
         confirmButton = {
-            Button(onClick = if (enabled) onDisable else onEnable) {
-                Text(if (enabled) "Turn off" else "Turn on")
+            val action = when {
+                needsPermission -> onRecoverPermission
+                enabled -> onDisable
+                else -> onEnable
+            }
+            Button(onClick = action) {
+                Text(
+                    when {
+                        needsPermission -> "Open settings"
+                        enabled -> "Turn off"
+                        else -> "Turn on"
+                    },
+                )
             }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Not now") } },
+        dismissButton = {
+            TextButton(onClick = if (needsPermission) onDisable else onDismiss) {
+                Text(if (needsPermission) "Turn off" else "Not now")
+            }
+        },
     )
 }

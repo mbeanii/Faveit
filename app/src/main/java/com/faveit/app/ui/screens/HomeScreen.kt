@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -35,6 +36,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -184,7 +186,12 @@ private fun SearchResults(
         return
     }
 
-    LazyColumn(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    val resultListState = key(query) { rememberLazyListState() }
+    LazyColumn(
+        modifier = modifier,
+        state = resultListState,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
         item {
             Text(
                 if (results.size == 1) "1 MATCH" else "${results.size} MATCHES",

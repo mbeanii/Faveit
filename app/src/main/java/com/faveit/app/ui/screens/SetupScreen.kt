@@ -12,6 +12,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
@@ -26,6 +27,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -50,6 +52,7 @@ fun SetupScreen(
     val pageItems = items.filter { it.source.category == category }
     val pageSelected = pageItems.count { it.isFavorite }
     val isLast = page == FaveCategory.entries.lastIndex
+    val gridState = key(page) { rememberLazyGridState() }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -94,6 +97,7 @@ fun SetupScreen(
     ) { scaffoldPadding ->
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
+            state = gridState,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(scaffoldPadding)

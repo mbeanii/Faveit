@@ -1,8 +1,11 @@
 package com.faveit.app.ui
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
+import android.provider.Settings
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -59,6 +62,11 @@ fun FaveitRoot(viewModel: FaveitViewModel = viewModel()) {
         showReminderDialog = false
     }
 
+    val notificationPermissionGranted = Build.VERSION.SDK_INT < 33 ||
+        ContextCompat.checkSelfPermission(
+            context, Manifest.permission.POST_NOTIFICATIONS,
+        ) == PackageManager.PERMISSION_GRANTED
+
     val background = Brush.verticalGradient(listOf(Ink, DeepInk, Ink))
     Box(
         Modifier.fillMaxSize().background(background).systemBarsPadding().imePadding(),
@@ -104,7 +112,7 @@ fun FaveitRoot(viewModel: FaveitViewModel = viewModel()) {
                 onQueryChange = { query = it },
                 results = results,
                 favoriteCounts = snapshot.favorites.groupingBy { it.category }.eachCount(),
-                remindersEnabled = snapshot.remindersEnabled,
+                remindersEnabled = snapshot.remindersEnabled && notificationPermissionGranted,
                 onCategory = {
                     selectedCategoryName = it.name
                     destination = CATEGORY
@@ -127,6 +135,7 @@ fun FaveitRoot(viewModel: FaveitViewModel = viewModel()) {
 
         if (showReminderDialog) ReminderDialog(
             enabled = snapshot.remindersEnabled,
+            permissionGranted = notificationPermissionGranted,
             onDismiss = { showReminderDialog = false },
             onDisable = {
                 viewModel.setRemindersEnabled(false)
@@ -143,6 +152,21 @@ fun FaveitRoot(viewModel: FaveitViewModel = viewModel()) {
                 } else {
                     permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                 }
+            },
+            onRecoverPermission = {
+                val intent = if (Build.VERSION.SDK_INT >= 26) {
+                    Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(
+                        Settings.EXTRA_APP_PACKAGE,
+                        context.packageName,
+                    )
+                } else {
+                    Intent(
+                        Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                        Uri.parse("package:${context.packageName}"),
+                    )
+                }
+                context.startActivity(intent)
+                showReminderDialog = false
             },
         )
     }
