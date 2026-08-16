@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Faveit</string>
+    <string name="notification_channel_name">Favorite reminders</string>
+    <string name="notification_channel_description">Occasional reminders of things you already love</string>
+</resources>
