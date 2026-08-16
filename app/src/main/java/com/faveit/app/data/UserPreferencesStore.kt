@@ -10,11 +10,13 @@ import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.faveit.app.model.FavoriteOverride
 import java.io.IOException
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.retryWhen
 
+private const val PREFERENCES_READ_RETRY_DELAY_MS = 500L
 private val Context.userDataStore by preferencesDataStore(
     name = "faveit_preferences",
     corruptionHandler = ReplaceFileCorruptionHandler { emptyPreferences() },
@@ -32,8 +34,11 @@ class UserPreferencesStore(context: Context) {
     private val dataStore = context.applicationContext.userDataStore
 
     val preferences: Flow<UserPreferences> = dataStore.data
-        .catch { error ->
-            if (error is IOException) emit(emptyPreferences()) else throw error
+        .retryWhen { error, _ ->
+            if (error !is IOException) return@retryWhen false
+            emit(emptyPreferences())
+            delay(PREFERENCES_READ_RETRY_DELAY_MS)
+            true
         }
         .map(::decode)
 

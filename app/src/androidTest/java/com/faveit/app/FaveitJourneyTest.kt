@@ -42,6 +42,9 @@ class FaveitJourneyTest {
         if (composeRule.onAllNodesWithContentDescription("Add favorite").fetchSemanticsNodes().isNotEmpty()) {
             composeRule.onNodeWithContentDescription("Add favorite").performClick()
         }
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule.onAllNodesWithContentDescription("Already a favorite").fetchSemanticsNodes().isNotEmpty()
+        }
         composeRule.onNodeWithContentDescription("Already a favorite").assertIsDisplayed()
 
         composeRule.onNodeWithTag("global_search").performTextClearance()

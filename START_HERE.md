@@ -18,7 +18,7 @@ configuration on any API 23+ device. From a configured terminal:
 ```
 
 Current debug artifact: `app/build/outputs/apk/debug/app-debug.apk`.
-SHA-256: `f9bca5007047358a8c0d99c231c981a07cd2be7d9091e8b7b917aae959cf3422`.
+SHA-256: `0f3625f24d83224371aecdf84b1c837293fb83a81052a09714205a91339eeb2b`.
 
 ## What was validated
 
