@@ -66,7 +66,7 @@ fun FavoriteEditorSheet(
         Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(bottom = 24.dp)) {
             Text("Make it yours", style = MaterialTheme.typography.headlineMedium)
             Text(
-                "Changes stay only on this device.",
+                "Saved on this device; Android backup may transfer changes.",
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 2.dp, bottom = 16.dp),
             )
