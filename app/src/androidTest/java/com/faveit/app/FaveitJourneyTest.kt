@@ -3,6 +3,8 @@ package com.faveit.app
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
+import androidx.compose.ui.test.assertIsNotSelected
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithTag
@@ -17,34 +19,59 @@ import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import kotlinx.coroutines.runBlocking
+import java.io.File
+import org.junit.FixMethodOrder
 import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.RuleChain
+import org.junit.rules.TestRule
+import org.junit.runner.Description
 import org.junit.runner.RunWith
+import org.junit.runners.MethodSorters
+import org.junit.runners.model.Statement
 
+private class ClearFirstRunStateRule : TestRule {
+    override fun apply(base: Statement, description: Description): Statement =
+        object : Statement() {
+            override fun evaluate() {
+                if (description.methodName == "aSetupSearchAddAndRecallRestaurant") {
+                    val context = InstrumentationRegistry.getInstrumentation().targetContext
+                    val preferencesFile = File(
+                        context.filesDir,
+                        "datastore/faveit_preferences.preferences_pb",
+                    )
+                    check(!preferencesFile.exists() || preferencesFile.delete()) {
+                        "Could not clear Faveit preferences before first-run journey"
+                    }
+                }
+                base.evaluate()
+            }
+        }
+}
+
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 @RunWith(AndroidJUnit4::class)
 class FaveitJourneyTest {
-    @get:Rule val composeRule = createAndroidComposeRule<MainActivity>()
+    private val composeRule = createAndroidComposeRule<MainActivity>()
+    @get:Rule val rules: RuleChain =
+        RuleChain.outerRule(ClearFirstRunStateRule()).around(composeRule)
 
-    @Test fun setupSearchAddAndRecallRestaurant() {
+    @Test fun aSetupSearchAddAndRecallRestaurant() {
         val app = InstrumentationRegistry.getInstrumentation().targetContext.applicationContext
             as FaveitApplication
         runBlocking { app.repository.removeFavorite("restaurant_in_n_out") }
         composeRule.waitForIdle()
 
-        var selectedDuringSetup = false
-        if (composeRule.onAllNodesWithText("Skip").fetchSemanticsNodes().isNotEmpty()) {
-            composeRule.onNodeWithTag("setup_item_restaurant_shake_shack")
-                .assertIsOff()
-                .performClick()
-            composeRule.waitUntil(timeoutMillis = 10_000) {
-                "restaurant_shake_shack" in runBlocking {
-                    app.repository.currentPreferences().favoriteIds
-                }
+        composeRule.onNodeWithTag("setup_item_restaurant_shake_shack")
+            .assertIsOff()
+            .performClick()
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            "restaurant_shake_shack" in runBlocking {
+                app.repository.currentPreferences().favoriteIds
             }
-            composeRule.onNodeWithTag("setup_item_restaurant_shake_shack").assertIsOn()
-            selectedDuringSetup = true
-            composeRule.onNodeWithText("Skip").performClick()
         }
+        composeRule.onNodeWithTag("setup_item_restaurant_shake_shack").assertIsOn()
+        composeRule.onNodeWithText("Skip").performClick()
 
         composeRule.waitUntil(timeoutMillis = 10_000) {
             composeRule.onAllNodesWithTag("global_search").fetchSemanticsNodes().isNotEmpty()
@@ -53,9 +80,7 @@ class FaveitJourneyTest {
         composeRule.onNodeWithTag("global_search").performTextInput("In N Out")
         composeRule.onNodeWithText("In-N-Out").assertIsDisplayed()
         composeRule.onNodeWithText("Restaurant").assertIsDisplayed()
-        if (composeRule.onAllNodesWithContentDescription("Add favorite").fetchSemanticsNodes().isNotEmpty()) {
-            composeRule.onNodeWithContentDescription("Add favorite").performClick()
-        }
+        composeRule.onNodeWithContentDescription("Add favorite").performClick()
         composeRule.waitUntil(timeoutMillis = 10_000) {
             composeRule.onAllNodesWithContentDescription("Already a favorite").fetchSemanticsNodes().isNotEmpty()
         }
@@ -64,16 +89,14 @@ class FaveitJourneyTest {
         composeRule.onNodeWithTag("global_search").performTextClearance()
         composeRule.onNodeWithTag("category_restaurants").performClick()
         composeRule.onNodeWithTag("favorite_restaurant_in_n_out").assertIsDisplayed()
-        if (selectedDuringSetup) {
-            composeRule.waitUntil(timeoutMillis = 10_000) {
-                composeRule.onAllNodesWithTag("favorite_restaurant_shake_shack")
-                    .fetchSemanticsNodes().isNotEmpty()
-            }
-            composeRule.onNodeWithTag("favorite_restaurant_shake_shack").assertIsDisplayed()
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule.onAllNodesWithTag("favorite_restaurant_shake_shack")
+                .fetchSemanticsNodes().isNotEmpty()
         }
+        composeRule.onNodeWithTag("favorite_restaurant_shake_shack").assertIsDisplayed()
     }
 
-    @Test fun customizeMoveRestoreRemoveAndRediscoverFavorite() {
+    @Test fun bCustomizeMoveRestoreRemoveAndRediscoverFavorite() {
         val app = InstrumentationRegistry.getInstrumentation().targetContext.applicationContext
             as FaveitApplication
         runBlocking {
@@ -91,6 +114,8 @@ class FaveitJourneyTest {
                 .fetchSemanticsNodes().isNotEmpty()
         }
         composeRule.onNodeWithTag("favorite_restaurant_in_n_out").performClick()
+        composeRule.onNodeWithTag("gem_style_ruby").assertIsSelected()
+        composeRule.onNodeWithTag("gem_style_amethyst").assertIsNotSelected()
 
         composeRule.onNodeWithTag("custom_name").performTextClearance()
         composeRule.onNodeWithTag("custom_name").performTextInput("Friday Burgers")
@@ -109,6 +134,8 @@ class FaveitJourneyTest {
         }
         composeRule.onNodeWithText("Friday Burgers").assertIsDisplayed()
         composeRule.onNodeWithTag("favorite_restaurant_in_n_out").performClick()
+        composeRule.onNodeWithTag("gem_style_amethyst").assertIsSelected()
+        composeRule.onNodeWithTag("gem_style_ruby").assertIsNotSelected()
         composeRule.onNodeWithTag("reset_customization").performScrollTo().performClick()
 
         composeRule.waitUntil(timeoutMillis = 10_000) {
@@ -122,6 +149,8 @@ class FaveitJourneyTest {
         }
         composeRule.onNodeWithText("In-N-Out").assertIsDisplayed()
         composeRule.onNodeWithTag("favorite_restaurant_in_n_out").performClick()
+        composeRule.onNodeWithTag("gem_style_ruby").assertIsSelected()
+        composeRule.onNodeWithTag("gem_style_amethyst").assertIsNotSelected()
         composeRule.onNodeWithTag("remove_favorite").performScrollTo().performClick()
         composeRule.onNodeWithTag("confirm_remove").performClick()
 
