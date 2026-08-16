@@ -17,6 +17,16 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.retryWhen
 
 private const val PREFERENCES_READ_RETRY_DELAY_MS = 500L
+
+private fun Flow<Preferences>.retryReadErrors(
+    emitFallback: Boolean,
+): Flow<Preferences> = retryWhen { error, _ ->
+    if (error !is IOException) return@retryWhen false
+    if (emitFallback) emit(emptyPreferences())
+    delay(PREFERENCES_READ_RETRY_DELAY_MS)
+    true
+}
+
 private val Context.userDataStore by preferencesDataStore(
     name = "faveit_preferences",
     corruptionHandler = ReplaceFileCorruptionHandler { emptyPreferences() },
@@ -34,15 +44,13 @@ class UserPreferencesStore(context: Context) {
     private val dataStore = context.applicationContext.userDataStore
 
     val preferences: Flow<UserPreferences> = dataStore.data
-        .retryWhen { error, _ ->
-            if (error !is IOException) return@retryWhen false
-            emit(emptyPreferences())
-            delay(PREFERENCES_READ_RETRY_DELAY_MS)
-            true
-        }
+        .retryReadErrors(emitFallback = true)
         .map(::decode)
 
-    suspend fun current(): UserPreferences = preferences.first()
+    suspend fun current(): UserPreferences = dataStore.data
+        .retryReadErrors(emitFallback = false)
+        .map(::decode)
+        .first()
 
     suspend fun toggleFavorite(itemId: String) {
         dataStore.edit { values ->
