@@ -1,6 +1,7 @@
 package com.faveit.app.data
 
 import android.content.Context
+import androidx.annotation.VisibleForTesting
 import com.faveit.app.model.CatalogItem
 import com.faveit.app.model.DisplayItem
 import com.faveit.app.model.FavoriteOverride
@@ -45,6 +46,8 @@ class FaveitRepository(context: Context) {
         )
     }
 
+    @VisibleForTesting
+    internal suspend fun resetForTests() = preferencesStore.resetForTests()
     fun search(query: String): List<CatalogItem> = SearchRanker.search(query, catalog)
     suspend fun toggleFavorite(itemId: String) = preferencesStore.toggleFavorite(itemId)
     suspend fun addFavorite(itemId: String) = preferencesStore.addFavorite(itemId)

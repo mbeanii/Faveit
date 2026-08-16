@@ -19,7 +19,6 @@ import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import kotlinx.coroutines.runBlocking
-import java.io.File
 import org.junit.FixMethodOrder
 import org.junit.Rule
 import org.junit.Test
@@ -30,18 +29,15 @@ import org.junit.runner.RunWith
 import org.junit.runners.MethodSorters
 import org.junit.runners.model.Statement
 
-private class ClearFirstRunStateRule : TestRule {
+private class ResetFirstRunStateRule : TestRule {
     override fun apply(base: Statement, description: Description): Statement =
         object : Statement() {
             override fun evaluate() {
                 if (description.methodName == "aSetupSearchAddAndRecallRestaurant") {
-                    val context = InstrumentationRegistry.getInstrumentation().targetContext
-                    val preferencesFile = File(
-                        context.filesDir,
-                        "datastore/faveit_preferences.preferences_pb",
-                    )
-                    check(!preferencesFile.exists() || preferencesFile.delete()) {
-                        "Could not clear Faveit preferences before first-run journey"
+                    val app = InstrumentationRegistry.getInstrumentation()
+                        .targetContext.applicationContext as FaveitApplication
+                    runBlocking {
+                        app.repository.resetForTests()
                     }
                 }
                 base.evaluate()
@@ -54,7 +50,7 @@ private class ClearFirstRunStateRule : TestRule {
 class FaveitJourneyTest {
     private val composeRule = createAndroidComposeRule<MainActivity>()
     @get:Rule val rules: RuleChain =
-        RuleChain.outerRule(ClearFirstRunStateRule()).around(composeRule)
+        RuleChain.outerRule(ResetFirstRunStateRule()).around(composeRule)
 
     @Test fun aSetupSearchAddAndRecallRestaurant() {
         val app = InstrumentationRegistry.getInstrumentation().targetContext.applicationContext

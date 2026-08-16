@@ -1,6 +1,7 @@
 package com.faveit.app.data
 
 import android.content.Context
+import androidx.annotation.VisibleForTesting
 import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
@@ -51,6 +52,11 @@ class UserPreferencesStore(context: Context) {
         .retryReadErrors(emitFallback = false)
         .map(::decode)
         .first()
+
+    @VisibleForTesting
+    internal suspend fun resetForTests() {
+        dataStore.edit { it.clear() }
+    }
 
     suspend fun toggleFavorite(itemId: String) {
         dataStore.edit { values ->
