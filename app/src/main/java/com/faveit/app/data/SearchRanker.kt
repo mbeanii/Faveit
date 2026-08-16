@@ -7,7 +7,7 @@ object SearchRanker {
     fun normalize(value: String): String = Normalizer.normalize(value, Normalizer.Form.NFKD)
         .replace(Regex("\\p{M}+"), "")
         .lowercase()
-        .replace(Regex("[^\\p{L}\\p{N}]+"), " ")
+        .replace(Regex("[^\\p{L}\\p{N}\\p{S}]+"), " ")
         .trim()
         .replace(Regex("\\s+"), " ")
 

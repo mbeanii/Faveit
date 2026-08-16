@@ -34,6 +34,10 @@ here so a future maintainer can change them deliberately.
    licensing risk or image decode/network latency.
 4. **No forced splash screen.** A lightweight wordmark is shown only while the
    first local DataStore value is read.
+5. **Bundled glyphs target the API 23 system emoji baseline.** Category and
+   catalog symbols avoid newer glyphs that render as missing-character boxes
+   on supported older devices. Richer bundled EmojiCompat typography can be
+   reconsidered after the MVP.
 
 ## Architecture and platform
 

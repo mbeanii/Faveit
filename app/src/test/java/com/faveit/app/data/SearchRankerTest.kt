@@ -38,6 +38,13 @@ class SearchRankerTest {
             emoji = "🍣",
             palette = GemPalette.AMETHYST,
         ),
+        CatalogItem(
+            id = "gem",
+            name = "💎",
+            category = FaveCategory.GAMES,
+            emoji = "💎",
+            palette = GemPalette.SAPPHIRE,
+        ),
     )
 
     @Test fun punctuationDoesNotBlockRapidLookup() {
@@ -54,6 +61,10 @@ class SearchRankerTest {
 
     @Test fun nonLatinDisplayNamesRemainSearchable() {
         assertEquals("sushi", SearchRanker.search("寿司", items).single().id)
+    }
+
+    @Test fun symbolOnlyDisplayNamesRemainSearchable() {
+        assertEquals("gem", SearchRanker.search("💎", items).single().id)
     }
 
     @Test fun irrelevantQueriesReturnNothing() {

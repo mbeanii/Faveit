@@ -17,20 +17,20 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun ReminderDialog(
     enabled: Boolean,
-    permissionGranted: Boolean,
+    deliveryAvailable: Boolean,
     onDismiss: () -> Unit,
     onEnable: () -> Unit,
     onDisable: () -> Unit,
-    onRecoverPermission: () -> Unit,
+    onRecoverNotifications: () -> Unit,
 ) {
-    val needsPermission = enabled && !permissionGranted
+    val needsRecovery = enabled && !deliveryAvailable
     AlertDialog(
         onDismissRequest = onDismiss,
         icon = { Icon(Icons.Rounded.AutoAwesome, null, tint = MaterialTheme.colorScheme.primary) },
         title = {
             Text(
                 when {
-                    needsPermission -> "Notification access is off"
+                    needsRecovery -> "Notification access is off"
                     enabled -> "Gentle reminders are on"
                     else -> "Remember an old favorite"
                 },
@@ -39,7 +39,7 @@ fun ReminderDialog(
         text = {
             Column {
                 Text(
-                    if (needsPermission) {
+                    if (needsRecovery) {
                         "Android is blocking Faveit's weekly reminder. Open notification settings to restore it."
                     } else {
                         "Faveit can send one simple local reminder each week, starting in a few days."
@@ -60,14 +60,14 @@ fun ReminderDialog(
         },
         confirmButton = {
             val action = when {
-                needsPermission -> onRecoverPermission
+                needsRecovery -> onRecoverNotifications
                 enabled -> onDisable
                 else -> onEnable
             }
             Button(onClick = action) {
                 Text(
                     when {
-                        needsPermission -> "Open settings"
+                        needsRecovery -> "Open settings"
                         enabled -> "Turn off"
                         else -> "Turn on"
                     },
@@ -75,8 +75,8 @@ fun ReminderDialog(
             }
         },
         dismissButton = {
-            TextButton(onClick = if (needsPermission) onDisable else onDismiss) {
-                Text(if (needsPermission) "Turn off" else "Not now")
+            TextButton(onClick = if (needsRecovery) onDisable else onDismiss) {
+                Text(if (needsRecovery) "Turn off" else "Not now")
             }
         },
     )

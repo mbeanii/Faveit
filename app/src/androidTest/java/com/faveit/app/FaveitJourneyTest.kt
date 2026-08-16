@@ -1,9 +1,9 @@
 package com.faveit.app
 
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
@@ -23,6 +23,10 @@ class FaveitJourneyTest {
     @Test fun setupSearchAddAndRecallRestaurant() {
         if (composeRule.onAllNodesWithText("Skip").fetchSemanticsNodes().isNotEmpty()) {
             composeRule.onNodeWithText("Skip").performClick()
+        }
+
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule.onAllNodesWithTag("global_search").fetchSemanticsNodes().isNotEmpty()
         }
 
         composeRule.onNodeWithTag("global_search").performTextInput("In N Out")

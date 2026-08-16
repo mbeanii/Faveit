@@ -9,6 +9,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
@@ -27,6 +28,9 @@ class FavoriteReminderWorker(
                 applicationContext,
                 Manifest.permission.POST_NOTIFICATIONS,
             ) != PackageManager.PERMISSION_GRANTED
+        ) return Result.success()
+        if (!NotificationManagerCompat.from(applicationContext).areNotificationsEnabled() ||
+            !isChannelEnabled(applicationContext)
         ) return Result.success()
 
         val app = applicationContext as FaveitApplication
@@ -76,6 +80,14 @@ class FavoriteReminderWorker(
             }
             context.getSystemService(NotificationManager::class.java)
                 .createNotificationChannel(channel)
+        }
+
+        fun isChannelEnabled(context: Context): Boolean {
+            if (Build.VERSION.SDK_INT < 26) return true
+            val channel = context.getSystemService(NotificationManager::class.java)
+                .getNotificationChannel(CHANNEL_ID)
+            return channel?.importance?.let { it != NotificationManager.IMPORTANCE_NONE }
+                ?: false
         }
     }
 }

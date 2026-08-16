@@ -13,7 +13,7 @@ enum class FaveCategory(
     TV("tv", "TV", "TV show", "📺", GemPalette.TOPAZ),
     BOOKS("books", "Books", "Book", "📚", GemPalette.EMERALD),
     GAMES("games", "Games", "Game", "🎮", GemPalette.AQUAMARINE),
-    ACTIVITIES("activities", "Activities", "Activity", "🛼", GemPalette.CITRINE),
+    ACTIVITIES("activities", "Activities", "Activity", "🚲", GemPalette.CITRINE),
     FOODS("foods", "Foods", "Food", "🍓", GemPalette.GARNET);
 
     companion object {
