@@ -1,6 +1,7 @@
 package com.faveit.app.data
 
 import android.content.Context
+import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
@@ -14,13 +15,17 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
-private val Context.userDataStore by preferencesDataStore(name = "faveit_preferences")
+private val Context.userDataStore by preferencesDataStore(
+    name = "faveit_preferences",
+    corruptionHandler = ReplaceFileCorruptionHandler { emptyPreferences() },
+)
 
 data class UserPreferences(
     val favoriteIds: Set<String> = emptySet(),
     val overrides: Map<String, FavoriteOverride> = emptyMap(),
     val setupComplete: Boolean = false,
     val remindersEnabled: Boolean = false,
+    val notificationPermissionRequested: Boolean = false,
 )
 
 class UserPreferencesStore(context: Context) {
@@ -80,6 +85,10 @@ class UserPreferencesStore(context: Context) {
         dataStore.edit { it[REMINDERS_ENABLED] = enabled }
     }
 
+    suspend fun markNotificationPermissionRequested() {
+        dataStore.edit { it[NOTIFICATION_PERMISSION_REQUESTED] = true }
+    }
+
     private fun decode(values: Preferences): UserPreferences {
         val overrides = values[OVERRIDES].orEmpty().mapNotNull(FavoriteOverrideCodec::decode)
             .associateBy { it.itemId }
@@ -88,6 +97,7 @@ class UserPreferencesStore(context: Context) {
             overrides = overrides,
             setupComplete = values[SETUP_COMPLETE] ?: false,
             remindersEnabled = values[REMINDERS_ENABLED] ?: false,
+            notificationPermissionRequested = values[NOTIFICATION_PERMISSION_REQUESTED] ?: false,
         )
     }
 
@@ -96,5 +106,7 @@ class UserPreferencesStore(context: Context) {
         val OVERRIDES = stringSetPreferencesKey("favorite_overrides")
         val SETUP_COMPLETE = booleanPreferencesKey("setup_complete")
         val REMINDERS_ENABLED = booleanPreferencesKey("reminders_enabled")
+        val NOTIFICATION_PERMISSION_REQUESTED =
+            booleanPreferencesKey("notification_permission_requested")
     }
 }

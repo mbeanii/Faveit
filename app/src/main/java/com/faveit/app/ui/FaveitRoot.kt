@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.provider.Settings
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -26,6 +27,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.LocalContext
+import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
@@ -50,6 +52,7 @@ private const val CATEGORY = "category"
 fun FaveitRoot(viewModel: FaveitViewModel = viewModel()) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val activity = LocalActivity.current
     var destination by rememberSaveable { mutableStateOf(HOME) }
     var selectedCategoryName by rememberSaveable { mutableStateOf(FaveCategory.RESTAURANTS.name) }
     var setupPage by rememberSaveable { mutableIntStateOf(0) }
@@ -124,6 +127,7 @@ fun FaveitRoot(viewModel: FaveitViewModel = viewModel()) {
                     destination = HOME
                 },
             )
+            BackHandler(enabled = setupPage > 0) { setupPage -= 1 }
         } else if (destination == CATEGORY) {
             val category = FaveCategory.valueOf(selectedCategoryName)
             CategoryScreen(
@@ -174,8 +178,19 @@ fun FaveitRoot(viewModel: FaveitViewModel = viewModel()) {
             },
             onEnable = {
                 when {
-                    !notificationPermissionGranted ->
-                        permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    !notificationPermissionGranted -> {
+                        val canRequestPermission = !snapshot.notificationPermissionRequested ||
+                            activity?.let {
+                                ActivityCompat.shouldShowRequestPermissionRationale(
+                                    it,
+                                    Manifest.permission.POST_NOTIFICATIONS,
+                                )
+                            } == true
+                        if (canRequestPermission) {
+                            viewModel.markNotificationPermissionRequested()
+                            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                        } else openNotificationSettings()
+                    }
                     !appNotificationsEnabled || !reminderChannelEnabled ->
                         openNotificationSettings()
                     else -> {

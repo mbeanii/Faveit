@@ -62,3 +62,7 @@ here so a future maintainer can change them deliberately.
 6. **No dependency injection or navigation framework.** A single application
    container and explicit three-destination state are easier to read and more
    than sufficient for this vertical slice.
+7. **A corrupt preferences file resets to safe defaults.** With no server-side
+   authority to repair local bytes, replacing an unreadable DataStore keeps the
+   app launchable; the unavoidable loss of corrupt favorites is preferable to
+   trapping every future launch on the loading screen.
