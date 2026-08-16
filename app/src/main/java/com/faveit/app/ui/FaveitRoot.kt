@@ -1,5 +1,6 @@
 package com.faveit.app.ui
 
+import android.annotation.SuppressLint
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -55,6 +56,7 @@ internal fun canRequestNotificationPermission(
     shouldShowRationale: Boolean,
 ): Boolean = !isGranted && (!hasDeniedPermission || shouldShowRationale)
 
+@SuppressLint("InlinedApi")
 @Composable
 fun FaveitRoot(viewModel: FaveitViewModel = viewModel()) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()

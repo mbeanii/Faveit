@@ -1,5 +1,6 @@
 package com.faveit.app.ui.screens
 
+import android.view.SoundEffectConstants
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
@@ -44,8 +45,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
@@ -100,7 +108,11 @@ fun HomeScreen(
                         } else {
                             Icons.Rounded.Notifications
                         },
-                        contentDescription = "Favorite reminders",
+                        contentDescription = if (remindersEnabled) {
+                            "Favorite reminders, on"
+                        } else {
+                            "Favorite reminders, off"
+                        },
                         tint = if (remindersEnabled) {
                             EmeraldAccent
                         } else {
@@ -241,11 +253,21 @@ private fun SearchResults(
 @Composable
 private fun SearchResultRow(item: DisplayItem, onAdd: () -> Unit) {
     val gems = item.palette.colors()
+    val haptics = LocalHapticFeedback.current
+    val view = LocalView.current
+    val addWithFeedback = {
+        haptics.performHapticFeedback(HapticFeedbackType.Confirm)
+        view.playSoundEffect(SoundEffectConstants.CLICK)
+        onAdd()
+    }
     Surface(
         modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).clickable(
             enabled = !item.isFavorite,
-            onClick = onAdd,
-        ).testTag("search_result_${item.id}"),
+            onClick = addWithFeedback,
+        ).semantics {
+            stateDescription = if (item.isFavorite) "Favorite" else "Not a favorite"
+            if (item.isFavorite) liveRegion = LiveRegionMode.Polite
+        }.testTag("search_result_${item.id}"),
         color = MaterialTheme.colorScheme.surfaceVariant,
         shape = RoundedCornerShape(18.dp),
     ) {
@@ -274,7 +296,7 @@ private fun SearchResultRow(item: DisplayItem, onAdd: () -> Unit) {
                 )
             }
             FilledIconButton(
-                onClick = onAdd,
+                onClick = addWithFeedback,
                 enabled = !item.isFavorite,
                 modifier = Modifier.testTag("add_${item.id}"),
             ) {

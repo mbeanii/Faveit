@@ -99,6 +99,7 @@ fun FavoriteEditorSheet(
                     FilterChip(
                         selected = category == option,
                         onClick = { category = option },
+                        modifier = Modifier.testTag("category_option_${option.wireName}"),
                         label = { Text("${option.emoji} ${option.title}") },
                     )
                 }
@@ -134,7 +135,7 @@ fun FavoriteEditorSheet(
             ) { Text("Save changes") }
             OutlinedButton(
                 onClick = { onReset(item.id); onDismiss() },
-                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp).testTag("reset_customization"),
             ) {
                 androidx.compose.material3.Icon(Icons.Rounded.RestartAlt, null)
                 Text("Restore catalog defaults", modifier = Modifier.padding(start = 8.dp))
@@ -163,7 +164,10 @@ fun FavoriteEditorSheet(
         title = { Text("Remove ${item.displayName}?") },
         text = { Text("You can always find it again in Discover More or search.") },
         confirmButton = {
-            TextButton(onClick = { onRemove(item.id); confirmRemove = false; onDismiss() }) {
+            TextButton(
+                onClick = { onRemove(item.id); confirmRemove = false; onDismiss() },
+                modifier = Modifier.testTag("confirm_remove"),
+            ) {
                 Text("Remove", color = MaterialTheme.colorScheme.error)
             }
         },
@@ -177,6 +181,7 @@ private fun GemStyleOption(palette: GemPalette, selected: Boolean, onClick: () -
     Column(
         Modifier
             .clip(RoundedCornerShape(14.dp))
+            .testTag("gem_style_${palette.name.lowercase()}")
             .selectable(
                 selected = selected,
                 onClick = onClick,

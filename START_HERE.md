@@ -18,33 +18,39 @@ configuration on any API 23+ device. From a configured terminal:
 ```
 
 Current debug artifact: `app/build/outputs/apk/debug/app-debug.apk`.
-SHA-256: `5d8fcdea4b2d91968f8fc053ad4cfbfa9e9f995f532095f78997d8efc674bf53`.
+SHA-256: `f7f5a4550f07dd998a48d51570065417f1b1a907bded78ae1347f598d8814ea1`.
 
 ## What was validated
 
-- `testDebugUnitTest`: 16 passing tests covering punctuation/alias/diacritic,
+- `testDebugUnitTest`: 21 passing tests covering punctuation/alias/diacritic,
   non-Latin and emoji-only search, supplementary-character name limits,
   malformed and Unicode override persistence, the 96-item catalog contract,
+  preference-to-display projection, exact reminder copy, stale catalog IDs,
   and notification first-request/dismissal/denial policy.
 - `assembleDebug`: passing; installable debug APK produced (about 20 MB).
 - `assembleRelease`: passing through R8, Compose mapping, release lint, and
   resource shrinking; an unsigned release APK is produced for signing later.
-- `assembleDebugAndroidTest`: passing; the Compose journey test APK and test
-  code compile.
+- `assembleDebugAndroidTest`: passing; four Compose tests compile. Two cover
+  setup/search/add/recall and the complete customize/move/reset/remove journey;
+  two directly assert setup, rapid-add, and reminder accessibility semantics.
 - `lintDebug`: passing with 0 errors. Its 3 informational warnings identify
   newer Core/Lifecycle releases that require API 37/AGP 9.1; the app is
   intentionally on the compatible API 36 line.
 - JSON syntax, duplicate catalog IDs, category coverage, Gradle wrapper, and
   whitespace checks pass.
 
-The environment had no JDK, Android SDK, `/dev/kvm`, or X11 bridge initially.
-The official toolchain was bootstrapped and an API 36 emulator was attempted
-with software CPU/GPU rendering. After supplying its missing host X11 library,
-the guest launched but remained ADB-offline beyond its startup window because
-hardware virtualization is unavailable. Therefore the compiled instrumentation
-journey was not executed and screenshots were not fabricated. Run
-`./gradlew connectedDebugAndroidTest` on a real device or accelerated emulator
-for that final device-level receipt.
+The official JDK 17/Android 36 toolchain was bootstrapped locally. A current
+API 36 AVD was then launched with software CPU/GPU rendering because this host
+has no `/dev/kvm`. It eventually connected over ADB, but two
+`./gradlew connectedDebugAndroidTest` attempts executed zero app tests: the first
+timed out reading guest properties and reported `Unknown API Level`; the second
+recognized API 36 but lost the package service during a guest
+`system_server` restart while installing the APK. These are emulator
+readiness failures, not Faveit assertion failures. The emulator was stopped,
+and no screenshots or connected-test success were fabricated.
+
+Run `./gradlew connectedDebugAndroidTest` on a real device or accelerated
+emulator for the remaining device-level receipt.
 
 ## Known limitations
 

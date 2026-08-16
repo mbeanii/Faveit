@@ -144,6 +144,7 @@ fun SetupScreen(
                     emoji = item.emoji,
                     palette = item.palette,
                     selected = item.isFavorite,
+                    selectionMode = true,
                     onClick = { onToggle(item.id) },
                     modifier = Modifier.fillMaxWidth().height(142.dp).testTag("setup_item_${item.id}"),
                 )
