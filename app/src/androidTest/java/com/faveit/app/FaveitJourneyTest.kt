@@ -58,6 +58,10 @@ class FaveitJourneyTest {
         runBlocking { app.repository.removeFavorite("restaurant_in_n_out") }
         composeRule.waitForIdle()
 
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule.onAllNodesWithTag("setup_item_restaurant_shake_shack")
+                .fetchSemanticsNodes().isNotEmpty()
+        }
         composeRule.onNodeWithTag("setup_item_restaurant_shake_shack")
             .assertIsOff()
             .performClick()
