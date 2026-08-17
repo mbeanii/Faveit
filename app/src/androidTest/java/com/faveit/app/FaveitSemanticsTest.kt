@@ -4,6 +4,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
@@ -13,15 +14,18 @@ import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.faveit.app.model.CatalogItem
 import com.faveit.app.model.DisplayItem
 import com.faveit.app.model.FaveCategory
 import com.faveit.app.model.GemPalette
+import com.faveit.app.ui.components.DelightBanner
 import com.faveit.app.ui.screens.HomeScreen
 import com.faveit.app.ui.screens.SetupScreen
 import com.faveit.app.ui.theme.FaveitTheme
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -47,6 +51,7 @@ class FaveitSemanticsTest {
 
     @Test fun setupSelectionIsAToggleAndProgressesByCategory() {
         var page by mutableIntStateOf(0)
+        var finished by mutableStateOf(false)
         var items by mutableStateOf(
             listOf(restaurant, music).map { source ->
                 DisplayItem(source, source.name, source.category, source.palette, false)
@@ -66,7 +71,7 @@ class FaveitSemanticsTest {
                             else item
                         }
                     },
-                    onFinish = {},
+                    onFinish = { finished = true },
                 )
             }
         }
@@ -75,6 +80,8 @@ class FaveitSemanticsTest {
             .assertIsOff()
             .performClick()
             .assertIsOn()
+        composeRule.onNodeWithTag("finish_setup_early").assertIsDisplayed().performClick()
+        assertTrue(finished)
         composeRule.onNodeWithTag("next_setup").performClick()
         composeRule.onNodeWithTag("setup_grid_music").assertIsDisplayed()
         composeRule.onNodeWithTag("setup_item_music_jazz").assertIsOff()
@@ -118,5 +125,22 @@ class FaveitSemanticsTest {
         )
         composeRule.onNodeWithContentDescription("Favorite reminders, off").performClick()
         composeRule.onNodeWithContentDescription("Favorite reminders, on").assertIsDisplayed()
+    }
+
+    @Test fun delightBannerAnnouncesPersistedSuccess() {
+        composeRule.setContent {
+            FaveitTheme {
+                DelightBanner("In-N-Out is in your favorites")
+            }
+        }
+
+        composeRule.onNodeWithTag("delight_banner").assert(
+            SemanticsMatcher.expectValue(
+                SemanticsProperties.LiveRegion,
+                LiveRegionMode.Polite,
+            ),
+        )
+        composeRule.onNodeWithText("In-N-Out is in your favorites").assertIsDisplayed()
+        composeRule.onNodeWithText("Yours, right when you need it.").assertIsDisplayed()
     }
 }

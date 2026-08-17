@@ -1,6 +1,7 @@
 package com.faveit.app.ui.components
 
 import android.view.SoundEffectConstants
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
@@ -64,7 +65,18 @@ fun GemTile(
 ) {
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
-    val scale by animateFloatAsState(if (pressed) 0.965f else 1f, label = "gem press")
+    val scale by animateFloatAsState(
+        when {
+            pressed -> 0.965f
+            selected && selectionMode -> 1.012f
+            else -> 1f
+        },
+        label = "gem press and selection",
+    )
+    val borderWidth by animateDpAsState(
+        if (selected && selectionMode) 2.dp else 1.dp,
+        label = "gem selection border",
+    )
     val haptics = LocalHapticFeedback.current
     val view = LocalView.current
     val gems = palette.colors()
@@ -80,7 +92,12 @@ fun GemTile(
             .graphicsLayer {
                 scaleX = scale
                 scaleY = scale
-                shadowElevation = if (pressed) 2.dp.toPx() else 10.dp.toPx()
+                translationY = if (pressed) 3.dp.toPx() else 0f
+                shadowElevation = when {
+                    pressed -> 2.dp.toPx()
+                    selected && selectionMode -> 15.dp.toPx()
+                    else -> 10.dp.toPx()
+                }
                 shape = tileShape
                 clip = false
             }
@@ -94,7 +111,15 @@ fun GemTile(
                     end = Offset.Infinite,
                 ),
             )
-            .border(1.dp, Color.White.copy(alpha = if (muted) 0.12f else 0.42f), tileShape)
+            .border(
+                borderWidth,
+                when {
+                    muted -> Color.White.copy(alpha = 0.12f)
+                    selected && selectionMode -> gems.glint.copy(alpha = 0.92f)
+                    else -> Color.White.copy(alpha = 0.42f)
+                },
+                tileShape,
+            )
             .then(
                 if (selectionMode) {
                     Modifier.toggleable(

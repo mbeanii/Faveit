@@ -71,11 +71,16 @@ class FaveitJourneyTest {
             }
         }
         composeRule.onNodeWithTag("setup_item_restaurant_shake_shack").assertIsOn()
-        composeRule.onNodeWithText("Skip").performClick()
+        composeRule.onNodeWithTag("finish_setup_early").performClick()
 
         composeRule.waitUntil(timeoutMillis = 10_000) {
             composeRule.onAllNodesWithTag("global_search").fetchSemanticsNodes().isNotEmpty()
         }
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule.onAllNodesWithText("Your favorites are ready")
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+        composeRule.onNodeWithText("Your favorites are ready").assertIsDisplayed()
 
         composeRule.onNodeWithTag("global_search").performTextInput("In N Out")
         composeRule.onNodeWithText("In-N-Out").assertIsDisplayed()
@@ -85,6 +90,18 @@ class FaveitJourneyTest {
             composeRule.onAllNodesWithContentDescription("Already a favorite").fetchSemanticsNodes().isNotEmpty()
         }
         composeRule.onNodeWithContentDescription("Already a favorite").assertIsDisplayed()
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule.onAllNodesWithText("In-N-Out is in your favorites")
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+        composeRule.onNodeWithText("In-N-Out is in your favorites").assertIsDisplayed()
+
+        composeRule.activityRule.scenario.recreate()
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule.onAllNodesWithTag("global_search").fetchSemanticsNodes().isNotEmpty()
+        }
+        composeRule.onNodeWithContentDescription("Already a favorite").assertIsDisplayed()
+
 
         composeRule.onNodeWithTag("global_search").performTextClearance()
         composeRule.onNodeWithTag("category_restaurants").performClick()
