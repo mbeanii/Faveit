@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -16,6 +17,7 @@ import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.rounded.Done
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
@@ -30,12 +32,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.faveit.app.model.DisplayItem
 import com.faveit.app.model.FaveCategory
+import com.faveit.app.ui.components.GemMark
 import com.faveit.app.ui.components.GemTile
 
 @Composable
@@ -53,6 +58,11 @@ fun SetupScreen(
     val pageSelected = pageItems.count { it.isFavorite }
     val isLast = page == FaveCategory.entries.lastIndex
     val gridState = key(page) { rememberLazyGridState() }
+    val haptics = LocalHapticFeedback.current
+    val finishWithDelight = {
+        haptics.performHapticFeedback(HapticFeedbackType.Confirm)
+        onFinish()
+    }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -79,8 +89,16 @@ fun SetupScreen(
                             style = MaterialTheme.typography.bodyMedium,
                         )
                     }
+                    if (!isLast && favoriteCount > 0) {
+                        TextButton(
+                            onClick = finishWithDelight,
+                            modifier = Modifier.testTag("finish_setup_early"),
+                        ) { Text("Start now") }
+                    }
                     Button(
-                        onClick = { if (isLast) onFinish() else onPage(page + 1) },
+                        onClick = {
+                            if (isLast) finishWithDelight() else onPage(page + 1)
+                        },
                         modifier = Modifier.testTag(if (isLast) "finish_setup" else "next_setup"),
                     ) {
                         Text(if (isLast) "Start Faveit" else "Next")
@@ -113,7 +131,7 @@ fun SetupScreen(
                             Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Previous category")
                         }
                     } else {
-                        TextButton(onClick = onFinish) { Text("Skip") }
+                        TextButton(onClick = finishWithDelight) { Text("Skip") }
                     }
                     LinearProgressIndicator(
                         progress = { (page + 1f) / FaveCategory.entries.size },
@@ -135,6 +153,33 @@ fun SetupScreen(
                         style = MaterialTheme.typography.bodyLarge,
                         modifier = Modifier.padding(top = 4.dp),
                     )
+                    if (page == 0) {
+                        Surface(
+                            modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+                            shape = RoundedCornerShape(20.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.82f),
+                            border = androidx.compose.foundation.BorderStroke(
+                                1.dp,
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.38f),
+                            ),
+                        ) {
+                            Row(
+                                Modifier.padding(14.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            ) {
+                                GemMark(Modifier.size(52.dp))
+                                Column(Modifier.weight(1f)) {
+                                    Text("For the blank-mind moment", fontWeight = FontWeight.Black)
+                                    Text(
+                                        "Pick one favorite and you can start immediately.",
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
             }
             items(pageItems, key = { it.id }) { item ->

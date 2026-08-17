@@ -5,9 +5,10 @@ vertical slice.
 
 ## Highest value next
 
-1. Run the compiled Compose journey on physical low-, mid-, and high-end
-   Android devices; verify cold-start/search latency, TalkBack traversal, font
-   scaling, haptic character, rotation, and the delayed notification path.
+1. Repeat the now-passing API 30 Compose journeys on physical low-, mid-, and
+   high-end Android devices; measure cold-start/search latency and verify
+   TalkBack traversal, font scaling, haptic character, rotation, and the
+   delayed notification path by hand.
 2. Add a permission-free Android photo picker, crop/contrast treatment, local
    URI persistence, and a clear orphan-file cleanup policy for users who want
    custom tile images.

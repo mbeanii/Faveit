@@ -9,10 +9,14 @@ system, or advertising surface. The user’s own favorites are the authority.
 
 ## What is implemented
 
-- An eight-category first-run picker with 96 bundled demonstration entries.
+- An eight-category first-run picker with 96 bundled demonstration entries;
+  one selection is enough to use `Start now`, while browsing every category
+  remains available.
 - A home screen where all categories remain visible at once.
 - Punctuation-, alias-, and diacritic-tolerant global search.
 - One-tap rapid add: searching `In N Out` finds `In-N-Out` as a Restaurant.
+- Persistence-confirmed emerald feedback for setup and rapid add, including
+  accessible live-region announcements.
 - Favorites-first category recall grids with a visually separated discovery
   section.
 - Local favorite removal, renaming, category reassignment, gem-style changes,
@@ -24,7 +28,8 @@ system, or advertising surface. The user’s own favorites are the authority.
   commercial artwork is bundled.
 
 See [START_HERE.md](START_HERE.md) for the current validation receipt and a
-short return-to-project guide.
+short return-to-project guide. See [INSTALL_ON_PHONE.md](INSTALL_ON_PHONE.md)
+for the direct phone-install path and a three-minute first-session script.
 
 ## Run it
 
@@ -58,8 +63,8 @@ Validation commands:
   and local notification delivery.
 - `app/src/test` — search, persistence-codec, projection, reminder-copy, and
   catalog contract tests.
-- `app/src/androidTest` — two end-to-end Compose journeys plus deterministic
-  setup and accessibility-semantics coverage.
+- `app/src/androidTest` — two end-to-end Compose journeys plus three focused
+  setup/accessibility-semantics tests.
 
 ## Data and privacy
 

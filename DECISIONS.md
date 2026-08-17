@@ -22,6 +22,9 @@ here so a future maintainer can change them deliberately.
 5. **Discoverability never outranks favorites.** A category shows favorites
    first in full color; non-favorites remain in the same view below a clear
    divider and are deliberately muted.
+6. **Setup is complete when the user has received value, not when every page
+   has been visited.** After one favorite is selected, `Start now` becomes
+   available. The eight-category tour remains browsable but is not a toll gate.
 
 ## UX and visual system
 
@@ -32,12 +35,20 @@ here so a future maintainer can change them deliberately.
 3. **Gem visuals are code-generated.** Layered gradients, highlights, borders,
    emoji, press depth, system click sound, and haptics provide identity without
    licensing risk or image decode/network latency.
-4. **No forced splash screen.** A lightweight wordmark is shown only while the
-   first local DataStore value is read.
+4. **No timed splash screen.** The Android launch window and the brief
+   in-Compose loading state use the same local emerald mark, but both disappear
+   as soon as the first local DataStore value is available.
 5. **Bundled glyphs target the API 23 system emoji baseline.** Category and
    catalog symbols avoid newer glyphs that render as missing-character boxes
    on supported older devices. Richer bundled EmojiCompat typography can be
    reconsidered after the MVP.
+6. **Success means observed persistence.** Setup and add confirmations are
+   emitted only after the repository snapshot reflects the requested state.
+   New feedback replaces an older banner so the user's latest action never
+   waits behind stale celebration.
+7. **The root owns dark-surface content color.** Compose backgrounds do not
+   implicitly set `LocalContentColor`; Faveit explicitly supplies
+   `onBackground` once at the root to keep headings legible across screens.
 
 ## Architecture and platform
 
