@@ -10,19 +10,24 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
-import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -36,8 +41,8 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalView
@@ -62,6 +67,8 @@ fun GemTile(
     muted: Boolean = false,
     compact: Boolean = false,
     selectionMode: Boolean = false,
+    onRemove: (() -> Unit)? = null,
+    removeLabel: String = "Remove favorite",
 ) {
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
@@ -85,6 +92,12 @@ fun GemTile(
         haptics.performHapticFeedback(HapticFeedbackType.Confirm)
         view.playSoundEffect(SoundEffectConstants.CLICK)
         onClick()
+    }
+    val removeWithFeedback = {
+        haptics.performHapticFeedback(HapticFeedbackType.Confirm)
+        view.playSoundEffect(SoundEffectConstants.CLICK)
+        onRemove?.invoke()
+        Unit
     }
 
     Box(
@@ -170,7 +183,12 @@ fun GemTile(
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text(emoji, fontSize = if (compact) 25.sp else 31.sp)
                 when {
-                    editable -> Icon(Icons.Rounded.Edit, "Customize", tint = Color.White.copy(alpha = 0.82f))
+                    onRemove != null -> Spacer(Modifier.size(38.dp))
+                    editable -> Icon(
+                        Icons.Rounded.Edit,
+                        "Customize",
+                        tint = Color.White.copy(alpha = 0.82f),
+                    )
                     selected -> Surface(
                         shape = RoundedCornerShape(50),
                         color = Color.White.copy(alpha = 0.9f),
@@ -203,6 +221,19 @@ fun GemTile(
                     letterSpacing = 0.7.sp,
                     maxLines = 1,
                 )
+            }
+        }
+
+        if (onRemove != null) {
+            FilledIconButton(
+                onClick = removeWithFeedback,
+                modifier = Modifier.align(Alignment.TopEnd).padding(4.dp).size(44.dp),
+                colors = IconButtonDefaults.filledIconButtonColors(
+                    containerColor = Color(0xFFD43B55),
+                    contentColor = Color.White,
+                ),
+            ) {
+                Icon(Icons.Rounded.Close, removeLabel)
             }
         }
     }

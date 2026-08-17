@@ -1,6 +1,8 @@
 package com.faveit.app
 
 import android.app.Application
+import androidx.work.Configuration
+import androidx.work.WorkManager
 import com.faveit.app.data.FaveitRepository
 import com.faveit.app.notifications.FavoriteReminderWorker
 import com.faveit.app.notifications.ReminderScheduler
@@ -17,6 +19,10 @@ class FaveitApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        // The Startup initializer is deliberately removed in the manifest so
+        // this is the sole, deterministic initialization point for reminders.
+        WorkManager.initialize(this, Configuration.Builder().build())
+
         repository = FaveitRepository(this)
         FavoriteReminderWorker.createNotificationChannel(this)
         applicationScope.launch {

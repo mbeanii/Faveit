@@ -5,9 +5,13 @@ here so a future maintainer can change them deliberately.
 
 ## Product
 
-1. **“Suggests” means recall, not inference, in the MVP.** Search, category
-   lookup, and an occasional random reminder surface only items in the user’s
-   own favorites. There is no behavioral ranking or recommendation model.
+1. **Suggestions are local, transparent, and subordinate to explicit taste.**
+   Setup begins with popular choices from distinct facets. After a user chooses
+   favorites, each requested batch targets six content-nearest neighbors and six
+   exploratory choices. Similarity is Jaccard overlap on curated tags, not a
+   trained profile, demographic inference, remote model, or engagement score.
+   Stable band shuffling provides variety without making tests or UI order
+   unpredictable. Explicit favorites always remain the authority.
 2. **All reminder behavior is opt-in.** Enabling reminders asks for Android’s
    notification permission where required, schedules one reminder per week,
    and delays the first by three days. The worker exits silently when there are
@@ -25,6 +29,14 @@ here so a future maintainer can change them deliberately.
 6. **Setup is complete when the user has received value, not when every page
    has been visited.** After one favorite is selected, `Start now` becomes
    available. The eight-category tour remains browsable but is not a toll gate.
+7. **Discovery is progressive, not an endless initial scroll.** Each category
+   starts with 12 recognizable, facet-diverse choices. `More picks` appends 12
+   without reordering anything already shown; this keeps selection position and
+   muscle memory stable.
+8. **Removal never makes the target flee.** Search toggles plus/check in one tap.
+   Setup and category grids use an independent red corner X; removal greys the
+   tile in place so a mistaken tap can be reversed. The body of a saved tile
+   remains the route to customization.
 
 ## UX and visual system
 
@@ -77,3 +89,27 @@ here so a future maintainer can change them deliberately.
    authority to repair local bytes, replacing an unreadable DataStore keeps the
    app launchable; the unavoidable loss of corrupt favorites is preferable to
    trapping every future launch on the loading screen.
+8. **Search preprocessing happens once.** The repository owns an immutable
+   `CatalogSearchIndex` that normalizes names and aliases at load time. A query
+   normalizes only itself and the tiny set of user-renamed favorites, avoiding a
+   full-catalog reconstruction on every keystroke.
+9. **The catalog is generated, researched, and migration-conscious.** The
+   canonical Python source contains 21 ten-item facets per category and emits
+   deterministic JSON. Popularity is a transparent category-local curation
+   order, not a claim of precise universal ranking. Stable IDs preserve all 82
+   concrete choices from the shipped MVP; 14 invented venue or vague playlist
+   placeholders were intentionally retired rather than laundered into the new
+   catalog.
+
+10. **Existing concrete favorites retain their original visual defaults.** The
+    generator carries the shipped emoji and gem palette for all 82 retained
+    IDs. A catalog expansion can improve metadata and ordering, but updating
+    the app must not unexpectedly restyle a user's established favorites.
+11. **Full-catalog projection runs away from the main thread.** DataStore
+    emissions resolve the 1,680 display items on `Dispatchers.Default`; Compose
+    receives completed snapshots. This keeps catalog growth from turning a
+    preference edit into UI-thread list reconstruction.
+12. **Faveit initializes WorkManager explicitly.** The library Startup metadata
+    is removed and `FaveitApplication` initializes WorkManager synchronously
+    before reminder reconciliation. This removes an observed process-restart
+    race while keeping reminders entirely local and battery-respectful.

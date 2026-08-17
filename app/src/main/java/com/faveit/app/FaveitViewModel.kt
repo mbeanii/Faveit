@@ -4,7 +4,6 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.faveit.app.data.FaveitSnapshot
-import com.faveit.app.data.SearchRanker
 import com.faveit.app.model.DisplayItem
 import com.faveit.app.model.FavoriteOverride
 import com.faveit.app.notifications.ReminderScheduler
@@ -40,15 +39,8 @@ class FaveitViewModel(application: Application) : AndroidViewModel(application) 
         )
 
     fun search(query: String, snapshot: FaveitSnapshot): List<DisplayItem> {
-        val searchableCatalog = snapshot.items.map { item ->
-            item.source.copy(
-                name = item.displayName,
-                aliases = item.source.aliases + item.source.name,
-            )
-        }
-        val rankedIds = SearchRanker.search(query, searchableCatalog).map { it.id }
-        val byId = snapshot.items.associateBy { it.id }
-        return rankedIds.mapNotNull(byId::get)
+        val rankedIds = repository.search(query, snapshot.customDisplayNames).map { it.id }
+        return rankedIds.mapNotNull(snapshot.itemsById::get)
     }
 
     fun toggleFavorite(itemId: String) = viewModelScope.launch {

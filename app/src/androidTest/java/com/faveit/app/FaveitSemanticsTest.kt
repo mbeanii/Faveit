@@ -65,12 +65,17 @@ class FaveitSemanticsTest {
                     items = items,
                     favoriteCount = items.count { it.isFavorite },
                     onPage = { page = it },
-                    onToggle = { selectedId ->
+                    onAdd = { selectedId ->
                         items = items.map { item ->
-                            if (item.id == selectedId) item.copy(isFavorite = !item.isFavorite)
-                            else item
+                            if (item.id == selectedId) item.copy(isFavorite = true) else item
                         }
                     },
+                    onRemove = { selectedId ->
+                        items = items.map { item ->
+                            if (item.id == selectedId) item.copy(isFavorite = false) else item
+                        }
+                    },
+                    onManage = {},
                     onFinish = { finished = true },
                 )
             }
@@ -108,6 +113,8 @@ class FaveitSemanticsTest {
                     remindersEnabled = remindersEnabled,
                     onCategory = {},
                     onAdd = { favorite = true },
+                    onRemove = { favorite = false },
+                    onManage = {},
                     onReminders = { remindersEnabled = true },
                 )
             }
@@ -119,9 +126,16 @@ class FaveitSemanticsTest {
                 "Not a favorite",
             ),
         )
-        composeRule.onNodeWithTag("add_restaurant_shake_shack").performClick()
+        composeRule.onNodeWithTag("favorite_toggle_restaurant_shake_shack").performClick()
         composeRule.onNodeWithTag("search_result_restaurant_shake_shack").assert(
             SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Favorite"),
+        )
+        composeRule.onNodeWithContentDescription("Remove Shake Shack from favorites").performClick()
+        composeRule.onNodeWithTag("search_result_restaurant_shake_shack").assert(
+            SemanticsMatcher.expectValue(
+                SemanticsProperties.StateDescription,
+                "Not a favorite",
+            ),
         )
         composeRule.onNodeWithContentDescription("Favorite reminders, off").performClick()
         composeRule.onNodeWithContentDescription("Favorite reminders, on").assertIsDisplayed()

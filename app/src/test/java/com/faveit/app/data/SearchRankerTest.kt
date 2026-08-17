@@ -6,6 +6,7 @@ import com.faveit.app.model.GemPalette
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import kotlin.system.measureNanoTime
 
 class SearchRankerTest {
     private val items = listOf(
@@ -70,4 +71,46 @@ class SearchRankerTest {
     @Test fun irrelevantQueriesReturnNothing() {
         assertTrue(SearchRanker.search("volleyball", items).isEmpty())
     }
+
+    @Test fun reusableIndexSearchesLocalCustomNamesAndOriginalNames() {
+        val index = CatalogSearchIndex(items)
+
+        assertEquals(
+            "in_n_out",
+            index.search(
+                query = "Friday Burgers",
+                customNames = mapOf("in_n_out" to "Friday Burgers"),
+            ).first().id,
+        )
+        assertEquals("in_n_out", index.search("In N Out").first().id)
+    }
+
+    @Test fun fullBundledCatalogSizedIndexStaysFastAcrossTypingWorkload() {
+        val largeCatalog = (1..1_680).map { index ->
+            CatalogItem(
+                id = "catalog_$index",
+                name = "Catalog Choice $index",
+                category = FaveCategory.entries[index % FaveCategory.entries.size],
+                emoji = "💎",
+                palette = GemPalette.SAPPHIRE,
+                aliases = listOf("choice number $index"),
+                popularity = index,
+            )
+        }
+        val index = CatalogSearchIndex(largeCatalog)
+        repeat(20) { index.search("choice 1599") }
+
+        val elapsedNanos = measureNanoTime {
+            repeat(250) { queryIndex ->
+                index.search("choice ${1 + (queryIndex % 1_680)}")
+            }
+        }
+
+        assertTrue(
+            "250 indexed searches took ${elapsedNanos / 1_000_000} ms",
+            elapsedNanos < 1_500_000_000L,
+        )
+        assertEquals("catalog_1599", index.search("choice number 1599").first().id)
+    }
+
 }

@@ -14,34 +14,48 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.rounded.Done
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.faveit.app.data.DiscoveryEngine
 import com.faveit.app.model.DisplayItem
 import com.faveit.app.model.FaveCategory
 import com.faveit.app.ui.components.GemMark
 import com.faveit.app.ui.components.GemTile
+
+private val StringListSaver = Saver<List<String>, ArrayList<String>>(
+    save = { ArrayList(it) },
+    restore = { it.toList() },
+)
 
 @Composable
 fun SetupScreen(
@@ -49,19 +63,50 @@ fun SetupScreen(
     items: List<DisplayItem>,
     favoriteCount: Int,
     onPage: (Int) -> Unit,
-    onToggle: (String) -> Unit,
+    onAdd: (String) -> Unit,
+    onRemove: (String) -> Unit,
+    onManage: (DisplayItem) -> Unit,
     onFinish: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val category = FaveCategory.entries[page]
-    val pageItems = items.filter { it.source.category == category }
-    val pageSelected = pageItems.count { it.isFavorite }
+    val catalog = remember(items.size) { items.map { it.source } }
+    val initialIds = remember(category, catalog) {
+        DiscoveryEngine.initial(catalog, category).map { it.id }
+    }
+    var shownIds by rememberSaveable(category.name, stateSaver = StringListSaver) {
+        mutableStateOf(initialIds)
+    }
+    var removedIds by rememberSaveable(category.name, stateSaver = StringListSaver) {
+        mutableStateOf(emptyList())
+    }
+    val byId = items.associateBy { it.id }
+    val pageFavorites = items.filter { it.isFavorite && it.source.category == category }
+    val pageFavoriteIds = pageFavorites.map { it.id }
+    LaunchedEffect(category, pageFavoriteIds) {
+        val missing = pageFavoriteIds.filterNot { it in shownIds }
+        if (missing.isNotEmpty()) shownIds = (shownIds + missing).distinct()
+    }
+    val pageItems = shownIds.mapNotNull(byId::get)
+    val pageSelected = pageFavorites.size
+    val totalInCategory = catalog.count { it.category == category }
+    val hasMore = shownIds.size < totalInCategory
     val isLast = page == FaveCategory.entries.lastIndex
     val gridState = key(page) { rememberLazyGridState() }
     val haptics = LocalHapticFeedback.current
     val finishWithDelight = {
         haptics.performHapticFeedback(HapticFeedbackType.Confirm)
         onFinish()
+    }
+    val showMore = {
+        val next = DiscoveryEngine.next(
+            items = catalog,
+            category = category,
+            favorites = pageFavorites.map { it.source },
+            excludedIds = shownIds.toSet(),
+            batch = shownIds.size / DiscoveryEngine.BATCH_SIZE,
+        )
+        shownIds = (shownIds + next.map { it.id }).distinct()
     }
 
     Scaffold(
@@ -148,7 +193,7 @@ fun SetupScreen(
                 Column(Modifier.padding(top = 5.dp, bottom = 5.dp)) {
                     Text("Pick what you love", style = MaterialTheme.typography.headlineMedium)
                     Text(
-                        "Tap your very favorite ${category.title.lowercase()}. Fast instincts win.",
+                        "Popular, varied picks first. More picks adapt to what you choose.",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.bodyLarge,
                         modifier = Modifier.padding(top = 4.dp),
@@ -183,16 +228,51 @@ fun SetupScreen(
                 }
             }
             items(pageItems, key = { it.id }) { item ->
+                val wasRemoved = item.id in removedIds && !item.isFavorite
                 GemTile(
                     title = item.displayName,
-                    subtitle = item.category.singular,
+                    subtitle = when {
+                        item.isFavorite -> "Tap to customize"
+                        wasRemoved -> "Removed · tap to add"
+                        else -> item.category.singular
+                    },
                     emoji = item.emoji,
                     palette = item.palette,
                     selected = item.isFavorite,
+                    editable = item.isFavorite,
+                    muted = wasRemoved,
                     selectionMode = true,
-                    onClick = { onToggle(item.id) },
-                    modifier = Modifier.fillMaxWidth().height(142.dp).testTag("setup_item_${item.id}"),
+                    onClick = {
+                        if (item.isFavorite) {
+                            onManage(item)
+                        } else {
+                            removedIds = removedIds.filterNot { it == item.id }
+                            onAdd(item.id)
+                        }
+                    },
+                    onRemove = if (item.isFavorite) {
+                        {
+                            removedIds = (removedIds + item.id).distinct()
+                            onRemove(item.id)
+                        }
+                    } else {
+                        null
+                    },
+                    removeLabel = "Remove ${item.displayName} from favorites",
+                    modifier = Modifier.fillMaxWidth().height(142.dp)
+                        .testTag("setup_item_${item.id}"),
                 )
+            }
+            if (hasMore) {
+                item(span = { GridItemSpan(maxLineSpan) }) {
+                    OutlinedButton(
+                        onClick = showMore,
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
+                            .testTag("more_setup_${category.wireName}"),
+                    ) {
+                        Text("More picks · ${shownIds.size} of $totalInCategory shown")
+                    }
+                }
             }
         }
     }

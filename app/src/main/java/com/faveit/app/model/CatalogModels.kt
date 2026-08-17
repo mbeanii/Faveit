@@ -39,6 +39,10 @@ data class CatalogItem(
     val emoji: String,
     val palette: GemPalette,
     val aliases: List<String> = emptyList(),
+    val facet: String = category.wireName,
+    val tags: Set<String> = setOf(category.wireName),
+    /** One is most broadly popular within a category; larger values are more specialist. */
+    val popularity: Int = Int.MAX_VALUE,
 )
 
 data class FavoriteOverride(
