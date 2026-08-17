@@ -70,11 +70,9 @@ class UserPreferencesStore(context: Context) {
     }
 
     suspend fun removeFavorite(itemId: String) {
+        // All removal surfaces are reversible; re-add restores local customization.
         dataStore.edit { values ->
             values[FAVORITES] = values[FAVORITES].orEmpty() - itemId
-            values[OVERRIDES] = values[OVERRIDES].orEmpty().filterNot {
-                FavoriteOverrideCodec.decode(it)?.itemId == itemId
-            }.toSet()
         }
     }
 

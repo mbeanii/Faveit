@@ -39,8 +39,8 @@ internal fun resolveDisplayItems(
 }
 
 class FaveitRepository(context: Context) {
-    val catalog: List<CatalogItem> = CatalogLoader(context).load()
-    private val searchIndex = CatalogSearchIndex(catalog)
+    val catalog: List<CatalogItem> = CatalogLoader(context).load() + LegacyCatalogItems.entries
+    private val searchIndex = CatalogSearchIndex(catalog.filter(CatalogItem::discoverable))
     private val preferencesStore = UserPreferencesStore(context)
 
     val snapshot: Flow<FaveitSnapshot> = preferencesStore.preferences.map { preferences ->

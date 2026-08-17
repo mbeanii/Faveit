@@ -86,7 +86,9 @@ The canonical editable source is
 generated output. The generator rejects wrong facet sizes, duplicate names, and duplicate stable
 IDs before writing the asset. It also carries explicit overrides for concrete
 IDs shipped in the original MVP, so an in-place app update does not orphan those
-favorites. Invented venues and vague playlist labels were deliberately removed.
+favorites. Invented venues and vague playlist labels are excluded from the master list.
+All 14 old IDs remain as non-discoverable runtime compatibility records so an
+existing installation never loses access to a saved selection.
 
 ## Known coverage limits
 

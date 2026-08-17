@@ -98,8 +98,8 @@ here so a future maintainer can change them deliberately.
    deterministic JSON. Popularity is a transparent category-local curation
    order, not a claim of precise universal ranking. Stable IDs preserve all 82
    concrete choices from the shipped MVP; 14 invented venue or vague playlist
-   placeholders were intentionally retired rather than laundered into the new
-   catalog.
+   placeholders are omitted from discovery but retained as hidden compatibility
+   records so an existing saved favorite never disappears.
 
 10. **Existing concrete favorites retain their original visual defaults.** The
     generator carries the shipped emoji and gem palette for all 82 retained
@@ -113,3 +113,14 @@ here so a future maintainer can change them deliberately.
     is removed and `FaveitApplication` initializes WorkManager synchronously
     before reminder reconciliation. This removes an observed process-restart
     race while keeping reminders entirely local and battery-respectful.
+
+13. **Reversible removal preserves customization.** Removing a favorite changes
+    membership only. Local name, category, and gem overrides survive so a
+    one-tap re-add restores the same tile; Reset defaults remains the deliberate
+    action that discards those choices.
+14. **Tile roles follow their actions.** An unsaved tile is an add toggle. A
+    saved tile body is a management button with an explicit Favorite state, and
+    its red X is the independent removal action.
+15. **Setup browsing state is category-keyed.** Expanded and removed-item lists
+    are stored in immutable saveable maps, so moving between categories or
+    recreating the Activity does not discard browsing progress.

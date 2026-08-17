@@ -47,6 +47,8 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -67,6 +69,7 @@ fun GemTile(
     muted: Boolean = false,
     compact: Boolean = false,
     selectionMode: Boolean = false,
+    favoriteState: Boolean? = null,
     onRemove: (() -> Unit)? = null,
     removeLabel: String = "Remove favorite",
 ) {
@@ -151,6 +154,11 @@ fun GemTile(
                     )
                 },
             )
+            .semantics {
+                favoriteState?.let {
+                    stateDescription = if (it) "Favorite" else "Not a favorite"
+                }
+            }
             .alpha(if (muted) 0.74f else 1f),
     ) {
         Canvas(Modifier.fillMaxSize()) {

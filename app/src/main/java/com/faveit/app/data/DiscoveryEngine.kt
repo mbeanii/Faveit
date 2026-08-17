@@ -17,7 +17,7 @@ object DiscoveryEngine {
         limit: Int = BATCH_SIZE,
     ): List<CatalogItem> {
         val candidates = items.asSequence()
-            .filter { it.category == category }
+            .filter { it.category == category && it.discoverable }
             .sortedBy { it.popularity }
             .toList()
         val diverse = candidates.distinctBy { it.facet }.take(limit)
@@ -35,7 +35,8 @@ object DiscoveryEngine {
     ): List<CatalogItem> {
         if (limit <= 0) return emptyList()
         val candidates = items.filter {
-            it.category == category && it.id !in excludedIds && favorites.none { favorite ->
+            it.category == category && it.discoverable &&
+                it.id !in excludedIds && favorites.none { favorite ->
                 favorite.id == it.id
             }
         }

@@ -90,6 +90,21 @@ class CatalogContractTest {
         )
     }
 
+    @Test fun everyRetiredFillerIdHasAHiddenRuntimeCompatibilityRecord() {
+        val expected = setOf(
+            "restaurant_sushi_spot", "restaurant_taco_stand",
+            "restaurant_corner_cafe", "restaurant_pizza_night",
+            "restaurant_thai_kitchen", "restaurant_indian_table",
+            "restaurant_bbq_house", "restaurant_garden_bistro",
+            "music_jazz", "music_classical", "music_indie", "music_rnb",
+            "music_house", "music_lofi",
+        )
+        val compatibility = LegacyCatalogItems.entries
+        assertEquals(expected, compatibility.map { it.id }.toSet())
+        assertTrue(compatibility.none { it.discoverable })
+        assertTrue(compatibility.none { source.contains("\"id\":\"${it.id}\"") })
+    }
+
     @Test fun formerGenericFillersAreGone() {
         listOf(
             "The Sushi Spot",

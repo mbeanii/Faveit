@@ -1,5 +1,6 @@
 package com.faveit.app
 
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
@@ -61,6 +62,20 @@ class FaveitJourneyTest {
         }
     }
 
+    private fun waitForFavoriteState(tag: String, favorite: Boolean) {
+        val expected = if (favorite) "Favorite" else "Not a favorite"
+        composeRule.waitUntil(timeoutMillis = 30_000) {
+            runCatching {
+                composeRule.onNodeWithTag(tag).assert(
+                    androidx.compose.ui.test.SemanticsMatcher.expectValue(
+                        androidx.compose.ui.semantics.SemanticsProperties.StateDescription,
+                        expected,
+                    ),
+                )
+            }.isSuccess
+        }
+    }
+
     private fun waitForContentDescription(description: String) {
         composeRule.waitUntil(timeoutMillis = 30_000) {
             composeRule.onAllNodesWithContentDescription(description)
@@ -86,7 +101,7 @@ class FaveitJourneyTest {
                 app.repository.currentPreferences().favoriteIds
             }
         }
-        waitForToggle("setup_item_restaurant_taco_bell", isOn = true)
+        waitForFavoriteState("setup_item_restaurant_taco_bell", favorite = true)
         composeRule.onNodeWithTag("finish_setup_early").performClick()
         // The focused setup semantics test proves this button's callback. Crossing
         // the idempotent persistence boundary here avoids no-KVM input starvation.
@@ -188,6 +203,17 @@ class FaveitJourneyTest {
         composeRule.onNodeWithTag("favorite_restaurant_in_n_out").performClick()
         composeRule.onNodeWithTag("gem_style_amethyst").assertIsSelected()
         composeRule.onNodeWithTag("gem_style_ruby").assertIsNotSelected()
+
+        // Reversible removal keeps the user's local name, category, and gem.
+        composeRule.onNodeWithTag("remove_favorite").performScrollTo().performClick()
+        composeRule.onNodeWithTag("confirm_remove").performClick()
+        waitForToggle("favorite_restaurant_in_n_out", isOn = false)
+        composeRule.onNodeWithText("Friday Burgers").assertIsDisplayed()
+        composeRule.onNodeWithTag("favorite_restaurant_in_n_out").performClick()
+        waitForFavoriteState("favorite_restaurant_in_n_out", favorite = true)
+        composeRule.onNodeWithText("Friday Burgers").assertIsDisplayed()
+        composeRule.onNodeWithTag("favorite_restaurant_in_n_out").performClick()
+        composeRule.onNodeWithTag("gem_style_amethyst").assertIsSelected()
         composeRule.onNodeWithTag("reset_customization").performScrollTo().performClick()
 
         composeRule.waitUntil(timeoutMillis = 30_000) {
@@ -219,7 +245,7 @@ class FaveitJourneyTest {
                 app.repository.currentPreferences().favoriteIds
             }
         }
-        waitForToggle("favorite_restaurant_in_n_out", isOn = true)
+        waitForFavoriteState("favorite_restaurant_in_n_out", favorite = true)
         composeRule.onNodeWithContentDescription("Remove In-N-Out from favorites").performClick()
         composeRule.waitUntil(timeoutMillis = 30_000) {
             "restaurant_in_n_out" !in runBlocking {

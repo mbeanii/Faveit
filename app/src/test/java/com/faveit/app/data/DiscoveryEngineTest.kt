@@ -94,6 +94,26 @@ class DiscoveryEngineTest {
         assertTrue(first.none { it.id == favorite.id })
     }
 
+    @Test fun compatibilityOnlyItemsNeverEnterDiscovery() {
+        val visible = item("visible", "visible", setOf("history"), 1)
+        val hidden = item("hidden", "hidden", setOf("history"), 2)
+            .copy(discoverable = false)
+        assertEquals(
+            listOf("visible"),
+            DiscoveryEngine.initial(listOf(hidden, visible), FaveCategory.BOOKS)
+                .map { it.id },
+        )
+        assertTrue(
+            DiscoveryEngine.next(
+                items = listOf(hidden, visible),
+                category = FaveCategory.BOOKS,
+                favorites = emptyList(),
+                excludedIds = setOf(visible.id),
+                batch = 1,
+            ).isEmpty(),
+        )
+    }
+
     @Test fun categoryMembershipAloneDoesNotCreateFalseNeighbors() {
         val fantasy = item("fantasy", "fantasy", setOf("magic"), 1)
         val history = item("history", "history", setOf("nonfiction"), 2)

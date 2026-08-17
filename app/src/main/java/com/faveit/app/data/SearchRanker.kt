@@ -16,7 +16,7 @@ class CatalogSearchIndex(items: List<CatalogItem>) {
 
     private data class Match(val item: CatalogItem, val textScore: Int)
 
-    private val indexed = items.map { item ->
+    private val indexed = items.filter(CatalogItem::discoverable).map { item ->
         IndexedItem(
             item = item,
             name = SearchRanker.index(item.name),

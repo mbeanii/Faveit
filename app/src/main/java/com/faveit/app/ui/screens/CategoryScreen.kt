@@ -55,7 +55,8 @@ fun CategoryScreen(
         !it.isFavorite || it.category == category
     }
     val discover = items.filter {
-        !it.isFavorite && it.source.category == category && it.id !in pinnedIds
+        !it.isFavorite && it.source.discoverable &&
+            it.source.category == category && it.id !in pinnedIds
     }
 
     Column(modifier.fillMaxSize()) {
@@ -110,7 +111,8 @@ fun CategoryScreen(
                         selected = item.isFavorite,
                         editable = item.isFavorite,
                         muted = !item.isFavorite,
-                        selectionMode = true,
+                        selectionMode = !item.isFavorite,
+                        favoriteState = item.isFavorite,
                         onClick = {
                             if (item.isFavorite) onManage(item) else onAdd(item.id)
                         },

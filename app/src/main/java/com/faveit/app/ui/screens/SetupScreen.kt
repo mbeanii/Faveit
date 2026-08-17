@@ -52,9 +52,19 @@ import com.faveit.app.model.FaveCategory
 import com.faveit.app.ui.components.GemMark
 import com.faveit.app.ui.components.GemTile
 
-private val StringListSaver = Saver<List<String>, ArrayList<String>>(
-    save = { ArrayList(it) },
-    restore = { it.toList() },
+private const val SAVED_LIST_SEPARATOR = "\u001F"
+private val StringListMapSaver = Saver<Map<String, List<String>>, ArrayList<String>>(
+    save = { values ->
+        ArrayList(values.flatMap { (key, ids) ->
+            ids.map { id -> "$key$SAVED_LIST_SEPARATOR$id" }
+        })
+    },
+    restore = { encoded ->
+        encoded.groupBy(
+            keySelector = { it.substringBefore(SAVED_LIST_SEPARATOR) },
+            valueTransform = { it.substringAfter(SAVED_LIST_SEPARATOR) },
+        )
+    },
 )
 
 @Composable
@@ -74,22 +84,30 @@ fun SetupScreen(
     val initialIds = remember(category, catalog) {
         DiscoveryEngine.initial(catalog, category).map { it.id }
     }
-    var shownIds by rememberSaveable(category.name, stateSaver = StringListSaver) {
-        mutableStateOf(initialIds)
+    var shownIdsByCategory by rememberSaveable(stateSaver = StringListMapSaver) {
+        mutableStateOf(emptyMap())
     }
-    var removedIds by rememberSaveable(category.name, stateSaver = StringListSaver) {
-        mutableStateOf(emptyList())
+    var removedIdsByCategory by rememberSaveable(stateSaver = StringListMapSaver) {
+        mutableStateOf(emptyMap())
+    }
+    val shownIds = shownIdsByCategory[category.name] ?: initialIds
+    val removedIds = removedIdsByCategory[category.name].orEmpty()
+    val updateShownIds: (List<String>) -> Unit = { updated ->
+        shownIdsByCategory = shownIdsByCategory + (category.name to updated)
+    }
+    val updateRemovedIds: (List<String>) -> Unit = { updated ->
+        removedIdsByCategory = removedIdsByCategory + (category.name to updated)
     }
     val byId = items.associateBy { it.id }
     val pageFavorites = items.filter { it.isFavorite && it.source.category == category }
     val pageFavoriteIds = pageFavorites.map { it.id }
     LaunchedEffect(category, pageFavoriteIds) {
         val missing = pageFavoriteIds.filterNot { it in shownIds }
-        if (missing.isNotEmpty()) shownIds = (shownIds + missing).distinct()
+        if (missing.isNotEmpty()) updateShownIds((shownIds + missing).distinct())
     }
     val pageItems = shownIds.mapNotNull(byId::get)
     val pageSelected = pageFavorites.size
-    val totalInCategory = catalog.count { it.category == category }
+    val totalInCategory = catalog.count { it.category == category && it.discoverable }
     val hasMore = shownIds.size < totalInCategory
     val isLast = page == FaveCategory.entries.lastIndex
     val gridState = key(page) { rememberLazyGridState() }
@@ -106,7 +124,7 @@ fun SetupScreen(
             excludedIds = shownIds.toSet(),
             batch = shownIds.size / DiscoveryEngine.BATCH_SIZE,
         )
-        shownIds = (shownIds + next.map { it.id }).distinct()
+        updateShownIds((shownIds + next.map { it.id }).distinct())
     }
 
     Scaffold(
@@ -241,18 +259,19 @@ fun SetupScreen(
                     selected = item.isFavorite,
                     editable = item.isFavorite,
                     muted = wasRemoved,
-                    selectionMode = true,
+                    selectionMode = !item.isFavorite,
+                    favoriteState = item.isFavorite,
                     onClick = {
                         if (item.isFavorite) {
                             onManage(item)
                         } else {
-                            removedIds = removedIds.filterNot { it == item.id }
+                            updateRemovedIds(removedIds.filterNot { it == item.id })
                             onAdd(item.id)
                         }
                     },
                     onRemove = if (item.isFavorite) {
                         {
-                            removedIds = (removedIds + item.id).distinct()
+                            updateRemovedIds((removedIds + item.id).distinct())
                             onRemove(item.id)
                         }
                     } else {
