@@ -30,10 +30,10 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 ~~~
 
 Current debug APK:
-`app/build/outputs/apk/debug/app-debug.apk` (20,407,884 bytes)
+`app/build/outputs/apk/debug/app-debug.apk` (20,303,576 bytes)
 
 SHA-256:
-`e0b2b30716e42bb470a83b63aaf134423e232dd3c9bcb4eb34219a5402c1bdbd`
+`484d1b280384328f569b4246343380139ee6e7ca88a05ef68a5e5628c2e7a92e`
 
 This is a debug-signed prototype, not a production-distribution build.
 
@@ -41,38 +41,40 @@ This is a debug-signed prototype, not a production-distribution build.
 
 - The final matrix passed: `testDebugUnitTest`, `assembleDebug`,
   `assembleDebugAndroidTest`, `lintDebug`, and `assembleRelease`.
-- All 32 JVM tests passed with zero failures, errors, or skips. They cover the
+- All 35 JVM tests passed with zero failures, errors, or skips. They cover the
   1,680-item catalog contract, duplicate/filler regressions, legacy ID and
-  visual migration, adaptive 6-related/6-exploratory discovery, ranked search,
+  visual/alias migration, API-23 glyph policy, owner-scoped compatibility
+  recovery, adaptive 6-related/6-exploratory discovery, ranked search,
   persistence, notification behavior, editor limits, and delight copy.
 - A reusable full-catalog search index completed a 250-query typing workload in
   0.283 seconds on this host. The test's generous regression ceiling is 1.5
   seconds; this is a host regression signal, not a phone latency claim.
 - The generator reproduced exactly 1,680 items, 210 per category, with 21
   facets per category, unique IDs and category-local names, complete metadata,
-  no duplicate tags, and no rejected filler labels. All 14 rejected legacy
-  filler IDs remain available only as hidden runtime compatibility records.
+  no duplicate tags, no rejected filler labels, and only baseline-safe tile
+  glyphs. All 14 rejected legacy filler IDs remain hidden runtime
+  compatibility records. A direct comparison with the shipped catalog proves
+  that all 82 retained items keep all 132 prior aliases.
 - On an official API 30 Google APIs guest, one combined invocation passed
   `OK (5 tests)` in 206.068 seconds after all substantive catalog,
   discovery, search, UI, background-projection, and WorkManager lifecycle
   changes. It covered setup, persisted add/remove/re-add, Activity recreation,
   category recall, rename/move/restyle/reset/remove, reminder controls, and
   accessibility semantics. A post-run log audit found no Faveit crash.
-- The final lint-only refinement replaced mutable saved lists with immutable
-  lists and marked the Startup provider non-exported. Its complete Gradle
-  matrix passed. A final device rerun could not start tests because the
-  software-only guest OS crashed and restarted its system server; Android
-  reported `System has crashed` before any app assertion, and a retry never
-  retained a Faveit process. This infrastructure abort is not represented as a
-  passing run.
+- Seven Android tests now compile, including new regressions for discoverable
+  setup counts, category pinned-state recreation, and owner-scoped recovery of
+  retired favorites. A current runtime attempt could not boot a target: API 36
+  requires unavailable KVM, while API 30 software mode exits in the emulator
+  launcher because `libX11-xcb.so.1` is absent. This host failure occurred
+  before any app assertion and is not represented as a passing run.
 - `lintDebug` reports 0 errors and only 3 pre-existing dependency-version
   warnings. The newer dependency lines require API 37/AGP 9.1, while Faveit
   targets API 36.
 - Release R8, Compose mapping, resource shrinking, and packaging pass. The
-  unsigned release APK is 1,775,768 bytes with SHA-256
-  `f7558ed47ddfb4babd257539d69f51b06b58cbc42de290493463b9d175958d03`.
-  The instrumentation APK is 1,081,701 bytes with SHA-256
-  `4af00cc27f14d94a07bceba0fe30e0ce0755cac41031963b8d2c21d39339c22f`.
+  unsigned release APK is 1,773,688 bytes with SHA-256
+  `1664ebae2d327005d820979fda2a24efca5e34b52bf58a5dd565438e2b11c664`.
+  The instrumentation APK is 1,083,513 bytes with SHA-256
+  `4d8d9007d84f3e6dedbcef63a4ef950858467386b95bb65ef6b744d6efa88fb6`.
 - APK manifest audit confirms application ID `com.faveit.app`, minimum API
   23, target API 36, and no INTERNET permission. `git diff --check` passes.
 

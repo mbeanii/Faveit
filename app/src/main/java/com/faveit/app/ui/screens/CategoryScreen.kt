@@ -22,7 +22,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -33,10 +34,16 @@ import com.faveit.app.model.DisplayItem
 import com.faveit.app.model.FaveCategory
 import com.faveit.app.ui.components.GemTile
 
+private val StringListSaver = Saver<List<String>, ArrayList<String>>(
+    save = { ArrayList(it) },
+    restore = { it.toList() },
+)
+
 @Composable
 fun CategoryScreen(
     category: FaveCategory,
     items: List<DisplayItem>,
+    rememberedFavoriteIds: Set<String>,
     onBack: () -> Unit,
     onAdd: (String) -> Unit,
     onRemove: (String) -> Unit,
@@ -45,7 +52,9 @@ fun CategoryScreen(
 ) {
     val liveFavorites = items.filter { it.isFavorite && it.category == category }
     val liveFavoriteIds = liveFavorites.map { it.id }
-    var pinnedIds by remember(category) { mutableStateOf(liveFavoriteIds) }
+    var pinnedIds by rememberSaveable(category.name, stateSaver = StringListSaver) {
+        mutableStateOf(liveFavoriteIds)
+    }
     LaunchedEffect(category, liveFavoriteIds) {
         val additions = liveFavoriteIds.filterNot { it in pinnedIds }
         if (additions.isNotEmpty()) pinnedIds = (pinnedIds + additions).distinct()
@@ -55,8 +64,9 @@ fun CategoryScreen(
         !it.isFavorite || it.category == category
     }
     val discover = items.filter {
-        !it.isFavorite && it.source.discoverable &&
-            it.source.category == category && it.id !in pinnedIds
+        !it.isFavorite &&
+            (it.source.discoverable || it.id in rememberedFavoriteIds) &&
+            it.category == category && it.id !in pinnedIds
     }
 
     Column(modifier.fillMaxSize()) {

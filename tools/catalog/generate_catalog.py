@@ -232,6 +232,117 @@ ALIASES = {
     ("foods", "Crème brûlée"): ["creme brulee"],
 }
 
+# Search vocabulary is user-facing compatibility data. These aliases shipped in
+# version 0.1 and must survive when a retained item gains richer catalog data.
+LEGACY_ALIASES_BY_ID = {
+    "restaurant_in_n_out": ["in n out", "in and out", "innout"],
+    "restaurant_din_tai_fung": ["dtf", "dumplings"],
+    "restaurant_chipotle": ["chipotle mexican grill", "burritos"],
+    "restaurant_shake_shack": ["shakeshack"],
+    "music_beyonce": ["beyonce", "queen b"],
+    "music_daft_punk": ["electronic duo"],
+    "music_fleetwood_mac": ["rumours"],
+    "music_kendrick_lamar": ["kendrick"],
+    "music_taylor_swift": ["t swift", "swift"],
+    "music_bad_bunny": ["benito"],
+    "movie_spirited_away": ["studio ghibli", "ghibli"],
+    "movie_the_matrix": ["matrix"],
+    "movie_moonlight": ["moon light"],
+    "movie_parasite": ["gisaengchung"],
+    "movie_princess_bride": ["princess bride"],
+    "movie_everything_everywhere": ["eeaao", "everything everywhere"],
+    "movie_into_spider_verse": ["spiderverse", "spider verse"],
+    "movie_arrival": ["arrival movie"],
+    "movie_knives_out": ["knivesout"],
+    "movie_mad_max_fury_road": ["fury road", "mad max"],
+    "movie_paddington_2": ["paddington"],
+    "movie_get_out": ["getout"],
+    "tv_the_bear": ["bear"],
+    "tv_severance": ["lumon"],
+    "tv_ted_lasso": ["lasso"],
+    "tv_abbott_elementary": ["abbott"],
+    "tv_bluey": ["bluey show"],
+    "tv_schitts_creek": ["schitts creek", "schitt creek"],
+    "tv_only_murders": ["only murders", "omitb"],
+    "tv_avatar_airbender": ["atla", "last airbender"],
+    "tv_pachinko": ["pachinko series"],
+    "tv_great_british_bake_off": ["gbbo", "baking show"],
+    "tv_poker_face": ["pokerface"],
+    "tv_star_trek_strange_new_worlds": ["strange new worlds", "star trek"],
+    "book_parable_sower": ["octavia butler", "parable"],
+    "book_project_hail_mary": ["hail mary", "andy weir"],
+    "book_pride_prejudice": ["jane austen", "pride prejudice"],
+    "book_murderbot": ["murderbot", "martha wells"],
+    "book_educated": ["tara westover"],
+    "book_left_hand_darkness": ["ursula le guin", "left hand of darkness"],
+    "book_circe": ["madeline miller"],
+    "book_braiding_sweetgrass": ["robin wall kimmerer", "sweetgrass"],
+    "book_hitchhikers_guide": ["hitchhikers guide", "douglas adams"],
+    "book_night_circus": ["night circus", "erin morgenstern"],
+    "book_secret_history": ["donna tartt"],
+    "book_pachinko": ["min jin lee", "pachinko novel"],
+    "game_stardew_valley": ["stardew"],
+    "game_hades": ["hades game"],
+    "game_zelda_botw": ["zelda", "botw", "breath of the wild"],
+    "game_mario_kart": ["mariokart"],
+    "game_wingspan": ["wingspan board game"],
+    "game_codenames": ["code names", "party game"],
+    "game_celeste": ["celeste game"],
+    "game_baldurs_gate_3": ["bg3", "baldurs gate"],
+    "game_tetris": ["tetromino"],
+    "game_animal_crossing": ["acnh", "new horizons"],
+    "game_chess": ["chess game"],
+    "game_dungeons_dragons": ["dnd", "d&d", "tabletop rpg"],
+    "activity_hiking": ["hike", "trail walking"],
+    "activity_beach_day": ["beach", "ocean"],
+    "activity_museum": ["museum", "art museum"],
+    "activity_cooking_friends": ["cook together", "dinner party"],
+    "activity_roller_skating": ["rollerskating", "skating"],
+    "activity_karaoke": ["singing"],
+    "activity_reading_park": ["park reading", "read outside"],
+    "activity_board_game_night": ["game night", "board games"],
+    "activity_bike_ride": ["cycling", "biking"],
+    "activity_gardening": ["garden", "plants"],
+    "activity_live_comedy": ["comedy show", "stand up"],
+    "activity_picnic": ["picnic outside"],
+    "food_crispy_fries": ["french fries", "fries"],
+    "food_strawberries": ["strawberry"],
+    "food_dumplings": ["xiaolongbao", "xiao long bao", "dumplings"],
+    "food_chocolate_cake": ["cake", "chocolate"],
+    "food_spicy_ramen": ["ramen", "noodle soup"],
+    "food_mango": ["mango"],
+    "food_grilled_cheese": ["cheese toastie"],
+    "food_sushi": ["nigiri", "maki"],
+    "food_avocado_toast": ["avo toast"],
+    "food_tacos": ["tacos", "taco"],
+    "food_ice_cream": ["gelato", "icecream"],
+    "food_fresh_bread": ["bread", "bakery bread"],
+}
+
+# The app supports API 23 and does not bundle an emoji font. Limit generated
+# tiles to symbols that already shipped in the original MVP on that baseline.
+API_23_SAFE_EMOJI = frozenset({
+    "◼️", "☕", "♟️", "♠️", "⚔️", "⚽", "⛰️", "✏️", "✨", "❄️",
+    "🌊", "🌌", "🌙", "🌪️", "🌱", "🌳", "🌸", "🌻", "🌾", "🌿",
+    "🍎", "🍓", "🍔", "🍕", "🍖", "🍛", "🍜", "🍞", "🍟", "🍣",
+    "🍨", "🍰", "🍳", "🍴", "🍽️", "🎙️", "🎤", "🎧", "🎪", "🎭",
+    "🎲", "🎵", "🎷", "🎸", "🎻", "🎮", "🏎️", "🏔️", "🏖️", "🏛️",
+    "🏝️", "🏨", "🏺", "🐉", "🐦", "🐰", "🐶", "🐻", "👟", "👾",
+    "💊", "💌", "💿", "📖", "📚", "📺", "🔍", "🔥", "🕵️", "🕶️",
+    "🕷️", "🖖", "🖥️", "🗡️", "🚀", "🚲",
+})
+
+SAFE_EMOJI_FALLBACK = {
+    "restaurants": "🍴",
+    "music": "🎵",
+    "movies": "🎭",
+    "tv": "📺",
+    "books": "📖",
+    "games": "🎲",
+    "activities": "👟",
+    "foods": "🍴",
+}
+
 
 PALETTES = ["RUBY", "EMERALD", "AMETHYST", "SAPPHIRE", "TOPAZ", "AQUAMARINE", "CITRINE", "GARNET"]
 
@@ -394,16 +505,26 @@ def build() -> list[dict[str, object]]:
                 seen_ids.add(item_id)
                 popularity = depth * len(groups) + facet_index + 1
                 legacy_visual = LEGACY_VISUALS.get(item_id)
+                candidate_emoji = legacy_visual[0] if legacy_visual else emoji
+                tile_emoji = (
+                    candidate_emoji
+                    if candidate_emoji in API_23_SAFE_EMOJI
+                    else SAFE_EMOJI_FALLBACK[category]
+                )
+                aliases = list(dict.fromkeys([
+                    *LEGACY_ALIASES_BY_ID.get(item_id, []),
+                    *ALIASES.get((category, name), []),
+                ]))
                 records.append(
                     {
                         "id": item_id,
                         "name": name,
                         "category": category,
-                        "emoji": legacy_visual[0] if legacy_visual else emoji,
+                        "emoji": tile_emoji,
                         "palette": legacy_visual[1] if legacy_visual else PALETTES[
                             (facet_index + depth) % len(PALETTES)
                         ],
-                        "aliases": ALIASES.get((category, name), []),
+                        "aliases": aliases,
                         "facet": facet,
                         "tags": list(dict.fromkeys([facet, *tags])),
                         "popularity": popularity,
@@ -413,6 +534,12 @@ def build() -> list[dict[str, object]]:
     missing_legacy_ids = set(LEGACY_VISUALS) - generated_ids
     if missing_legacy_ids:
         raise ValueError(f"missing shipped favorite IDs: {sorted(missing_legacy_ids)}")
+    missing_alias_ids = set(LEGACY_ALIASES_BY_ID) - generated_ids
+    if missing_alias_ids:
+        raise ValueError(f"missing shipped alias IDs: {sorted(missing_alias_ids)}")
+    unsafe_emoji = {record["emoji"] for record in records} - API_23_SAFE_EMOJI
+    if unsafe_emoji:
+        raise ValueError(f"API 23-unsafe catalog emoji: {sorted(unsafe_emoji)}")
     return records
 
 

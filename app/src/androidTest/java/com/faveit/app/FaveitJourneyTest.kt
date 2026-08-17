@@ -253,5 +253,44 @@ class FaveitJourneyTest {
             }
         }
         waitForToggle("favorite_restaurant_in_n_out", isOn = false)
+
+        composeRule.activityRule.scenario.recreate()
+        composeRule.waitUntil(timeoutMillis = 30_000) {
+            composeRule.onAllNodesWithTag("category_grid_restaurants")
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+        composeRule.onNodeWithTag("favorite_restaurant_in_n_out").assertIsDisplayed()
+        waitForToggle("favorite_restaurant_in_n_out", isOn = false)
+    }
+
+    @Test fun cRetiredFavoriteRemainsRecoverableAfterRemovalAndRecreation() {
+        val app = InstrumentationRegistry.getInstrumentation().targetContext.applicationContext
+            as FaveitApplication
+        runBlocking {
+            app.repository.completeSetup()
+            app.repository.addFavorite("music_jazz")
+            app.repository.removeFavorite("music_jazz")
+        }
+        composeRule.waitUntil(timeoutMillis = 30_000) {
+            "music_jazz" in runBlocking {
+                app.repository.currentPreferences().rememberedFavoriteIds
+            }
+        }
+
+        composeRule.activityRule.scenario.recreate()
+        composeRule.waitUntil(timeoutMillis = 30_000) {
+            composeRule.onAllNodesWithTag("global_search").fetchSemanticsNodes().isNotEmpty()
+        }
+        composeRule.onNodeWithTag("global_search").performTextInput("Late night Jazz")
+        composeRule.onNodeWithText("Late-night Jazz").assertIsDisplayed()
+        composeRule.onNodeWithContentDescription("Add Late-night Jazz to favorites").performClick()
+        composeRule.waitUntil(timeoutMillis = 30_000) {
+            "music_jazz" in runBlocking {
+                app.repository.currentPreferences().favoriteIds
+            }
+        }
+        waitForContentDescription("Remove Late-night Jazz from favorites")
+        composeRule.onNodeWithContentDescription("Remove Late-night Jazz from favorites")
+            .assertIsDisplayed()
     }
 }

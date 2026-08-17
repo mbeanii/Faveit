@@ -39,7 +39,11 @@ class FaveitViewModel(application: Application) : AndroidViewModel(application) 
         )
 
     fun search(query: String, snapshot: FaveitSnapshot): List<DisplayItem> {
-        val rankedIds = repository.search(query, snapshot.customDisplayNames).map { it.id }
+        val rankedIds = repository.search(
+            query = query,
+            customNames = snapshot.customDisplayNames,
+            rememberedFavoriteIds = snapshot.rememberedFavoriteIds,
+        ).map { it.id }
         return rankedIds.mapNotNull(snapshot.itemsById::get)
     }
 

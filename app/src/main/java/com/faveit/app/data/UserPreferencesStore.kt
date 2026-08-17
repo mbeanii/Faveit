@@ -35,6 +35,7 @@ private val Context.userDataStore by preferencesDataStore(
 
 data class UserPreferences(
     val favoriteIds: Set<String> = emptySet(),
+    val rememberedFavoriteIds: Set<String> = emptySet(),
     val overrides: Map<String, FavoriteOverride> = emptyMap(),
     val setupComplete: Boolean = false,
     val remindersEnabled: Boolean = false,
@@ -62,17 +63,28 @@ class UserPreferencesStore(context: Context) {
         dataStore.edit { values ->
             val current = values[FAVORITES].orEmpty()
             values[FAVORITES] = if (itemId in current) current - itemId else current + itemId
+            values[REMEMBERED_FAVORITES] =
+                values[REMEMBERED_FAVORITES].orEmpty() + itemId
         }
     }
 
     suspend fun addFavorite(itemId: String) {
-        dataStore.edit { values -> values[FAVORITES] = values[FAVORITES].orEmpty() + itemId }
+        dataStore.edit { values ->
+            values[FAVORITES] = values[FAVORITES].orEmpty() + itemId
+            values[REMEMBERED_FAVORITES] =
+                values[REMEMBERED_FAVORITES].orEmpty() + itemId
+        }
     }
 
     suspend fun removeFavorite(itemId: String) {
         // All removal surfaces are reversible; re-add restores local customization.
         dataStore.edit { values ->
-            values[FAVORITES] = values[FAVORITES].orEmpty() - itemId
+            val current = values[FAVORITES].orEmpty()
+            values[FAVORITES] = current - itemId
+            if (itemId in current) {
+                values[REMEMBERED_FAVORITES] =
+                    values[REMEMBERED_FAVORITES].orEmpty() + itemId
+            }
         }
     }
 
@@ -111,6 +123,9 @@ class UserPreferencesStore(context: Context) {
             .associateBy { it.itemId }
         return UserPreferences(
             favoriteIds = values[FAVORITES].orEmpty(),
+            // Including current favorites migrates users from the original schema.
+            rememberedFavoriteIds = values[REMEMBERED_FAVORITES].orEmpty() +
+                values[FAVORITES].orEmpty(),
             overrides = overrides,
             setupComplete = values[SETUP_COMPLETE] ?: false,
             remindersEnabled = values[REMINDERS_ENABLED] ?: false,
@@ -120,6 +135,7 @@ class UserPreferencesStore(context: Context) {
 
     private companion object {
         val FAVORITES = stringSetPreferencesKey("favorite_ids")
+        val REMEMBERED_FAVORITES = stringSetPreferencesKey("remembered_favorite_ids")
         val OVERRIDES = stringSetPreferencesKey("favorite_overrides")
         val SETUP_COMPLETE = booleanPreferencesKey("setup_complete")
         val REMINDERS_ENABLED = booleanPreferencesKey("reminders_enabled")

@@ -16,7 +16,7 @@ class CatalogSearchIndex(items: List<CatalogItem>) {
 
     private data class Match(val item: CatalogItem, val textScore: Int)
 
-    private val indexed = items.filter(CatalogItem::discoverable).map { item ->
+    private val indexed = items.map { item ->
         IndexedItem(
             item = item,
             name = SearchRanker.index(item.name),
@@ -31,12 +31,16 @@ class CatalogSearchIndex(items: List<CatalogItem>) {
     fun search(
         query: String,
         customNames: Map<String, String> = emptyMap(),
+        eligibleUndiscoverableIds: Set<String> = emptySet(),
         limit: Int = 30,
     ): List<CatalogItem> {
         val needle = SearchRanker.index(query)
         if (needle.whole.isBlank() || limit <= 0) return emptyList()
 
         return indexed.mapNotNull { entry ->
+            if (!entry.item.discoverable && entry.item.id !in eligibleUndiscoverableIds) {
+                return@mapNotNull null
+            }
             val sourceScore = SearchRanker.score(needle, entry.name, entry.aliases)
             val customScore = customNames[entry.item.id]
                 ?.let(SearchRanker::index)

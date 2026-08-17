@@ -124,3 +124,17 @@ here so a future maintainer can change them deliberately.
 15. **Setup browsing state is category-keyed.** Expanded and removed-item lists
     are stored in immutable saveable maps, so moving between categories or
     recreating the Activity does not discard browsing progress.
+16. **Recall aliases are stable migration data.** Every synonym shipped for a
+    retained catalog ID remains searchable even when the item's canonical name,
+    facet, or new aliases change. The generator merges old and new vocabulary
+    by ID and rejects any old alias mapping whose ID is no longer generated.
+17. **Retired-item recovery is scoped to its previous owner.** DataStore keeps a
+    compact set of IDs the user genuinely favorited. That set admits otherwise
+    hidden compatibility records to search and Discover More after removal,
+    while a fresh user never sees the rejected filler. Current favorites
+    implicitly migrate, so upgrading does not require a one-time blocking job.
+18. **Pinned removals are both saveable and durable.** Category pinned IDs use
+    Compose saveable state so rotation/process recreation keeps a removed tile
+    in place. The remembered-favorite set is the durable fallback across a cold
+    session: the item remains searchable and discoverable in its effective
+    locally customized category.

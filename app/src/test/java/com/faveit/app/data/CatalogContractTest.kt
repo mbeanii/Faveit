@@ -131,4 +131,41 @@ class CatalogContractTest {
         assertTrue(source.contains("\"in n out\""))
         assertTrue(source.contains("\"in and out\""))
     }
+
+    @Test fun everyRetainedItemKeepsItsShippedRecallAliases() {
+        val expected = mapOf(
+            "game_zelda_botw" to listOf("zelda", "botw", "breath of the wild"),
+            "book_murderbot" to listOf("murderbot", "martha wells"),
+            "tv_great_british_bake_off" to listOf("gbbo", "baking show"),
+            "movie_everything_everywhere" to listOf("eeaao", "everything everywhere"),
+            "game_baldurs_gate_3" to listOf("bg3", "baldurs gate"),
+        )
+
+        expected.forEach { (id, aliases) ->
+            val item = objects.single { it.contains("\"id\":\"$id\"") }
+            aliases.forEach { alias ->
+                assertTrue("Missing shipped alias '$alias' for $id", item.contains("\"$alias\""))
+            }
+        }
+    }
+
+    @Test fun generatedTilesAvoidGlyphsAddedAfterTheApi23Baseline() {
+        val emojis = Regex("\\\"emoji\\\":\\\"([^\\\"]+)\\\"").findAll(source)
+            .map { it.groupValues[1] }
+            .toSet()
+        val unsupported = setOf(
+            "🧋",
+            "🪩",
+            "🪕",
+            "🪶",
+            "🪞",
+            "🥳",
+            "🧩",
+            "🧗",
+            "🧘",
+        )
+
+        assertTrue("Unsupported catalog glyphs: ${emojis intersect unsupported}",
+            (emojis intersect unsupported).isEmpty())
+    }
 }

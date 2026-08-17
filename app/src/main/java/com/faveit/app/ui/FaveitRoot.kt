@@ -245,6 +245,7 @@ fun FaveitRoot(viewModel: FaveitViewModel = viewModel()) {
                 CategoryScreen(
                     category = category,
                     items = snapshot.items,
+                    rememberedFavoriteIds = snapshot.rememberedFavoriteIds,
                     onBack = { destination = HOME },
                     onAdd = addFavoriteWithNotice,
                     onRemove = viewModel::removeFavorite,

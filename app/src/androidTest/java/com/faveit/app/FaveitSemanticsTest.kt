@@ -98,7 +98,7 @@ class FaveitSemanticsTest {
         composeRule.onNodeWithTag("setup_item_music_jazz").assertIsOff()
     }
 
-    @Test fun expandedSetupBatchSurvivesCategoryRoundTrip() {
+    @Test fun expandedSetupBatchSurvivesCategoryRoundTripAndIgnoresHiddenFavorites() {
         var page by mutableIntStateOf(0)
         val restaurants = (1..13).map { index ->
             CatalogItem(
@@ -113,15 +113,26 @@ class FaveitSemanticsTest {
             )
         }
         val musicItem = music.copy(id = "music_test", facet = "jazz", popularity = 1)
-        val items = (restaurants + musicItem).map { source ->
-            DisplayItem(source, source.name, source.category, source.palette, false)
+        val hiddenUpgradeFavorite = restaurant.copy(
+            id = "restaurant_hidden_upgrade",
+            name = "Retired favorite",
+            discoverable = false,
+        )
+        val items = (restaurants + musicItem + hiddenUpgradeFavorite).map { source ->
+            DisplayItem(
+                source,
+                source.name,
+                source.category,
+                source.palette,
+                source.id == hiddenUpgradeFavorite.id,
+            )
         }
         composeRule.setContent {
             FaveitTheme {
                 SetupScreen(
                     page = page,
                     items = items,
-                    favoriteCount = 0,
+                    favoriteCount = items.count(DisplayItem::isFavorite),
                     onPage = { page = it },
                     onAdd = {},
                     onRemove = {},
@@ -130,6 +141,8 @@ class FaveitSemanticsTest {
                 )
             }
         }
+        composeRule.onNodeWithTag("setup_item_restaurant_hidden_upgrade")
+            .performScrollTo().assertIsDisplayed()
         composeRule.onNodeWithTag("more_setup_restaurants").performClick()
         composeRule.onNodeWithTag("setup_item_restaurant_test_13")
             .performScrollTo().assertIsDisplayed()

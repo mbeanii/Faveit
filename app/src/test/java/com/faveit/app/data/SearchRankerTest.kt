@@ -85,6 +85,28 @@ class SearchRankerTest {
         assertEquals("in_n_out", index.search("In N Out").first().id)
     }
 
+    @Test fun hiddenCompatibilityItemsAreSearchableOnlyForTheirPreviousOwner() {
+        val hidden = CatalogItem(
+            id = "music_jazz",
+            name = "Late-night Jazz",
+            category = FaveCategory.MUSIC,
+            emoji = "🎷",
+            palette = GemPalette.SAPPHIRE,
+            aliases = listOf("smooth jazz"),
+            discoverable = false,
+        )
+        val index = CatalogSearchIndex(items + hidden)
+
+        assertTrue(index.search("late night jazz").isEmpty())
+        assertEquals(
+            hidden.id,
+            index.search(
+                query = "smooth jazz",
+                eligibleUndiscoverableIds = setOf(hidden.id),
+            ).single().id,
+        )
+    }
+
     @Test fun fullBundledCatalogSizedIndexStaysFastAcrossTypingWorkload() {
         val largeCatalog = (1..1_680).map { index ->
             CatalogItem(

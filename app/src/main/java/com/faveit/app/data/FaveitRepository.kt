@@ -16,6 +16,7 @@ data class FaveitSnapshot(
     val setupComplete: Boolean,
     val remindersEnabled: Boolean,
     val notificationPermissionDenied: Boolean,
+    val rememberedFavoriteIds: Set<String> = emptySet(),
 ) {
     val favorites: List<DisplayItem> = items.filter { it.isFavorite }
     val itemsById: Map<String, DisplayItem> = items.associateBy { it.id }
@@ -40,7 +41,7 @@ internal fun resolveDisplayItems(
 
 class FaveitRepository(context: Context) {
     val catalog: List<CatalogItem> = CatalogLoader(context).load() + LegacyCatalogItems.entries
-    private val searchIndex = CatalogSearchIndex(catalog.filter(CatalogItem::discoverable))
+    private val searchIndex = CatalogSearchIndex(catalog)
     private val preferencesStore = UserPreferencesStore(context)
 
     val snapshot: Flow<FaveitSnapshot> = preferencesStore.preferences.map { preferences ->
@@ -50,13 +51,21 @@ class FaveitRepository(context: Context) {
             setupComplete = preferences.setupComplete,
             remindersEnabled = preferences.remindersEnabled,
             notificationPermissionDenied = preferences.notificationPermissionDenied,
+            rememberedFavoriteIds = preferences.rememberedFavoriteIds,
         )
     }.flowOn(Dispatchers.Default)
 
     @VisibleForTesting
     internal suspend fun resetForTests() = preferencesStore.resetForTests()
-    fun search(query: String, customNames: Map<String, String> = emptyMap()): List<CatalogItem> =
-        searchIndex.search(query, customNames)
+    fun search(
+        query: String,
+        customNames: Map<String, String> = emptyMap(),
+        rememberedFavoriteIds: Set<String> = emptySet(),
+    ): List<CatalogItem> = searchIndex.search(
+        query = query,
+        customNames = customNames,
+        eligibleUndiscoverableIds = rememberedFavoriteIds,
+    )
     suspend fun toggleFavorite(itemId: String) = preferencesStore.toggleFavorite(itemId)
     suspend fun addFavorite(itemId: String) = preferencesStore.addFavorite(itemId)
     suspend fun removeFavorite(itemId: String) = preferencesStore.removeFavorite(itemId)

@@ -107,8 +107,9 @@ fun SetupScreen(
     }
     val pageItems = shownIds.mapNotNull(byId::get)
     val pageSelected = pageFavorites.size
+    val shownDiscoverableIds = shownIds.filter { byId[it]?.source?.discoverable == true }
     val totalInCategory = catalog.count { it.category == category && it.discoverable }
-    val hasMore = shownIds.size < totalInCategory
+    val hasMore = shownDiscoverableIds.size < totalInCategory
     val isLast = page == FaveCategory.entries.lastIndex
     val gridState = key(page) { rememberLazyGridState() }
     val haptics = LocalHapticFeedback.current
@@ -122,7 +123,7 @@ fun SetupScreen(
             category = category,
             favorites = pageFavorites.map { it.source },
             excludedIds = shownIds.toSet(),
-            batch = shownIds.size / DiscoveryEngine.BATCH_SIZE,
+            batch = shownDiscoverableIds.size / DiscoveryEngine.BATCH_SIZE,
         )
         updateShownIds((shownIds + next.map { it.id }).distinct())
     }
@@ -289,7 +290,10 @@ fun SetupScreen(
                         modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
                             .testTag("more_setup_${category.wireName}"),
                     ) {
-                        Text("More picks · ${shownIds.size} of $totalInCategory shown")
+                        Text(
+                            "More picks · ${shownDiscoverableIds.size} of " +
+                                "$totalInCategory shown",
+                        )
                     }
                 }
             }
