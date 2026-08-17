@@ -16,6 +16,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.faveit.app.model.CatalogItem
 import com.faveit.app.model.DisplayItem
@@ -65,12 +66,17 @@ class FaveitSemanticsTest {
                     items = items,
                     favoriteCount = items.count { it.isFavorite },
                     onPage = { page = it },
-                    onToggle = { selectedId ->
+                    onAdd = { selectedId ->
                         items = items.map { item ->
-                            if (item.id == selectedId) item.copy(isFavorite = !item.isFavorite)
-                            else item
+                            if (item.id == selectedId) item.copy(isFavorite = true) else item
                         }
                     },
+                    onRemove = { selectedId ->
+                        items = items.map { item ->
+                            if (item.id == selectedId) item.copy(isFavorite = false) else item
+                        }
+                    },
+                    onManage = {},
                     onFinish = { finished = true },
                 )
             }
@@ -79,12 +85,71 @@ class FaveitSemanticsTest {
         composeRule.onNodeWithTag("setup_item_restaurant_shake_shack")
             .assertIsOff()
             .performClick()
-            .assertIsOn()
+            .assert(
+                SemanticsMatcher.expectValue(
+                    SemanticsProperties.StateDescription,
+                    "Favorite",
+                ),
+            )
         composeRule.onNodeWithTag("finish_setup_early").assertIsDisplayed().performClick()
         assertTrue(finished)
         composeRule.onNodeWithTag("next_setup").performClick()
         composeRule.onNodeWithTag("setup_grid_music").assertIsDisplayed()
         composeRule.onNodeWithTag("setup_item_music_jazz").assertIsOff()
+    }
+
+    @Test fun expandedSetupBatchSurvivesCategoryRoundTripAndIgnoresHiddenFavorites() {
+        var page by mutableIntStateOf(0)
+        val restaurants = (1..13).map { index ->
+            CatalogItem(
+                id = "restaurant_test_$index",
+                name = "Restaurant $index",
+                category = FaveCategory.RESTAURANTS,
+                emoji = "🍽️",
+                palette = GemPalette.RUBY,
+                facet = "facet_$index",
+                tags = setOf("restaurants", "facet_$index"),
+                popularity = index,
+            )
+        }
+        val musicItem = music.copy(id = "music_test", facet = "jazz", popularity = 1)
+        val hiddenUpgradeFavorite = restaurant.copy(
+            id = "restaurant_hidden_upgrade",
+            name = "Retired favorite",
+            discoverable = false,
+        )
+        val items = (restaurants + musicItem + hiddenUpgradeFavorite).map { source ->
+            DisplayItem(
+                source,
+                source.name,
+                source.category,
+                source.palette,
+                source.id == hiddenUpgradeFavorite.id,
+            )
+        }
+        composeRule.setContent {
+            FaveitTheme {
+                SetupScreen(
+                    page = page,
+                    items = items,
+                    favoriteCount = items.count(DisplayItem::isFavorite),
+                    onPage = { page = it },
+                    onAdd = {},
+                    onRemove = {},
+                    onManage = {},
+                    onFinish = {},
+                )
+            }
+        }
+        composeRule.onNodeWithTag("setup_item_restaurant_hidden_upgrade")
+            .performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithTag("more_setup_restaurants").performClick()
+        composeRule.onNodeWithTag("setup_item_restaurant_test_13")
+            .performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithTag("next_setup").performClick()
+        composeRule.onNodeWithContentDescription("Previous category").performClick()
+        composeRule.onNodeWithTag("setup_item_restaurant_test_13")
+            .performScrollTo().assertIsDisplayed()
     }
 
     @Test fun rapidAddAndReminderControlsAnnounceTheirState() {
@@ -108,6 +173,8 @@ class FaveitSemanticsTest {
                     remindersEnabled = remindersEnabled,
                     onCategory = {},
                     onAdd = { favorite = true },
+                    onRemove = { favorite = false },
+                    onManage = {},
                     onReminders = { remindersEnabled = true },
                 )
             }
@@ -119,9 +186,16 @@ class FaveitSemanticsTest {
                 "Not a favorite",
             ),
         )
-        composeRule.onNodeWithTag("add_restaurant_shake_shack").performClick()
+        composeRule.onNodeWithTag("favorite_toggle_restaurant_shake_shack").performClick()
         composeRule.onNodeWithTag("search_result_restaurant_shake_shack").assert(
             SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Favorite"),
+        )
+        composeRule.onNodeWithContentDescription("Remove Shake Shack from favorites").performClick()
+        composeRule.onNodeWithTag("search_result_restaurant_shake_shack").assert(
+            SemanticsMatcher.expectValue(
+                SemanticsProperties.StateDescription,
+                "Not a favorite",
+            ),
         )
         composeRule.onNodeWithContentDescription("Favorite reminders, off").performClick()
         composeRule.onNodeWithContentDescription("Favorite reminders, on").assertIsDisplayed()

@@ -33,6 +33,7 @@ import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -75,6 +76,8 @@ fun HomeScreen(
     remindersEnabled: Boolean,
     onCategory: (FaveCategory) -> Unit,
     onAdd: (String) -> Unit,
+    onRemove: (String) -> Unit,
+    onManage: (DisplayItem) -> Unit,
     onReminders: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -164,7 +167,14 @@ fun HomeScreen(
                     },
                 )
             } else {
-                SearchResults(query, results, onAdd, Modifier.weight(1f))
+                SearchResults(
+                    query = query,
+                    results = results,
+                    onAdd = onAdd,
+                    onRemove = onRemove,
+                    onManage = onManage,
+                    modifier = Modifier.weight(1f),
+                )
             }
         }
     }
@@ -213,6 +223,8 @@ private fun SearchResults(
     query: String,
     results: List<DisplayItem>,
     onAdd: (String) -> Unit,
+    onRemove: (String) -> Unit,
+    onManage: (DisplayItem) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     if (results.isEmpty()) {
@@ -220,7 +232,7 @@ private fun SearchResults(
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text("No match for “$query”", style = MaterialTheme.typography.titleLarge)
                 Text(
-                    "The bundled catalog stays intentionally focused for this prototype.",
+                    "Try another title, artist, dish, place, game, or activity.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 6.dp),
                 )
@@ -245,26 +257,37 @@ private fun SearchResults(
             )
         }
         items(results, key = { it.id }) { item ->
-            SearchResultRow(item = item, onAdd = { onAdd(item.id) })
+            SearchResultRow(
+                item = item,
+                onAdd = { onAdd(item.id) },
+                onRemove = { onRemove(item.id) },
+                onManage = { onManage(item) },
+            )
         }
     }
 }
 
 @Composable
-private fun SearchResultRow(item: DisplayItem, onAdd: () -> Unit) {
+private fun SearchResultRow(
+    item: DisplayItem,
+    onAdd: () -> Unit,
+    onRemove: () -> Unit,
+    onManage: () -> Unit,
+) {
     val gems = item.palette.colors()
     val haptics = LocalHapticFeedback.current
     val view = LocalView.current
-    val addWithFeedback = {
+    val withFeedback: (() -> Unit) -> Unit = { action ->
         haptics.performHapticFeedback(HapticFeedbackType.Confirm)
         view.playSoundEffect(SoundEffectConstants.CLICK)
-        onAdd()
+        action()
     }
+    val rowAction = if (item.isFavorite) onManage else onAdd
+    val toggleAction = if (item.isFavorite) onRemove else onAdd
     Surface(
-        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).clickable(
-            enabled = !item.isFavorite,
-            onClick = addWithFeedback,
-        ).semantics {
+        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).clickable {
+            withFeedback(rowAction)
+        }.semantics {
             stateDescription = if (item.isFavorite) "Favorite" else "Not a favorite"
             if (item.isFavorite) liveRegion = LiveRegionMode.Polite
         }.testTag("search_result_${item.id}"),
@@ -296,13 +319,20 @@ private fun SearchResultRow(item: DisplayItem, onAdd: () -> Unit) {
                 )
             }
             FilledIconButton(
-                onClick = addWithFeedback,
-                enabled = !item.isFavorite,
-                modifier = Modifier.testTag("add_${item.id}"),
+                onClick = { withFeedback(toggleAction) },
+                modifier = Modifier.testTag("favorite_toggle_${item.id}"),
+                colors = IconButtonDefaults.filledIconButtonColors(
+                    containerColor = if (item.isFavorite) Color(0xFFD43B55) else gems.base,
+                    contentColor = Color.White,
+                ),
             ) {
                 Icon(
                     if (item.isFavorite) Icons.Rounded.Check else Icons.Rounded.Add,
-                    if (item.isFavorite) "Already a favorite" else "Add favorite",
+                    if (item.isFavorite) {
+                        "Remove ${item.displayName} from favorites"
+                    } else {
+                        "Add ${item.displayName} to favorites"
+                    },
                 )
             }
         }

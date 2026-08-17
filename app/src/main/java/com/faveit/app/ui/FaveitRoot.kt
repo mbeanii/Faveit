@@ -230,7 +230,9 @@ fun FaveitRoot(viewModel: FaveitViewModel = viewModel()) {
                     items = snapshot.items,
                     favoriteCount = snapshot.favorites.size,
                     onPage = { setupPage = it.coerceIn(FaveCategory.entries.indices) },
-                    onToggle = viewModel::toggleFavorite,
+                    onAdd = addFavoriteWithNotice,
+                    onRemove = viewModel::removeFavorite,
+                    onManage = { managedItemId = it.id },
                     onFinish = {
                         setupNoticePending = true
                         viewModel.completeSetup()
@@ -243,8 +245,10 @@ fun FaveitRoot(viewModel: FaveitViewModel = viewModel()) {
                 CategoryScreen(
                     category = category,
                     items = snapshot.items,
+                    rememberedFavoriteIds = snapshot.rememberedFavoriteIds,
                     onBack = { destination = HOME },
                     onAdd = addFavoriteWithNotice,
+                    onRemove = viewModel::removeFavorite,
                     onManage = { managedItemId = it.id },
                 )
                 BackHandler { destination = HOME }
@@ -263,6 +267,8 @@ fun FaveitRoot(viewModel: FaveitViewModel = viewModel()) {
                         destination = CATEGORY
                     },
                     onAdd = addFavoriteWithNotice,
+                    onRemove = viewModel::removeFavorite,
+                    onManage = { managedItemId = it.id },
                     onReminders = { showReminderDialog = true },
                 )
             }

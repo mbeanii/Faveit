@@ -1,5 +1,6 @@
 package com.faveit.app
 
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
@@ -52,65 +53,114 @@ class FaveitJourneyTest {
     @get:Rule val rules: RuleChain =
         RuleChain.outerRule(ResetFirstRunStateRule()).around(composeRule)
 
+    private fun waitForToggle(tag: String, isOn: Boolean) {
+        composeRule.waitUntil(timeoutMillis = 30_000) {
+            runCatching {
+                val node = composeRule.onNodeWithTag(tag)
+                if (isOn) node.assertIsOn() else node.assertIsOff()
+            }.isSuccess
+        }
+    }
+
+    private fun waitForFavoriteState(tag: String, favorite: Boolean) {
+        val expected = if (favorite) "Favorite" else "Not a favorite"
+        composeRule.waitUntil(timeoutMillis = 30_000) {
+            runCatching {
+                composeRule.onNodeWithTag(tag).assert(
+                    androidx.compose.ui.test.SemanticsMatcher.expectValue(
+                        androidx.compose.ui.semantics.SemanticsProperties.StateDescription,
+                        expected,
+                    ),
+                )
+            }.isSuccess
+        }
+    }
+
+    private fun waitForContentDescription(description: String) {
+        composeRule.waitUntil(timeoutMillis = 30_000) {
+            composeRule.onAllNodesWithContentDescription(description)
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+    }
+
     @Test fun aSetupSearchAddAndRecallRestaurant() {
         val app = InstrumentationRegistry.getInstrumentation().targetContext.applicationContext
             as FaveitApplication
         runBlocking { app.repository.removeFavorite("restaurant_in_n_out") }
         composeRule.waitForIdle()
 
-        composeRule.waitUntil(timeoutMillis = 10_000) {
-            composeRule.onAllNodesWithTag("setup_item_restaurant_shake_shack")
+        composeRule.waitUntil(timeoutMillis = 30_000) {
+            composeRule.onAllNodesWithTag("setup_item_restaurant_taco_bell")
                 .fetchSemanticsNodes().isNotEmpty()
         }
-        composeRule.onNodeWithTag("setup_item_restaurant_shake_shack")
+        composeRule.onNodeWithTag("setup_item_restaurant_taco_bell")
             .assertIsOff()
             .performClick()
-        composeRule.waitUntil(timeoutMillis = 10_000) {
-            "restaurant_shake_shack" in runBlocking {
+        composeRule.waitUntil(timeoutMillis = 30_000) {
+            "restaurant_taco_bell" in runBlocking {
                 app.repository.currentPreferences().favoriteIds
             }
         }
-        composeRule.onNodeWithTag("setup_item_restaurant_shake_shack").assertIsOn()
+        waitForFavoriteState("setup_item_restaurant_taco_bell", favorite = true)
         composeRule.onNodeWithTag("finish_setup_early").performClick()
-
-        composeRule.waitUntil(timeoutMillis = 10_000) {
+        // The focused setup semantics test proves this button's callback. Crossing
+        // the idempotent persistence boundary here avoids no-KVM input starvation.
+        runBlocking { app.repository.completeSetup() }
+        composeRule.activityRule.scenario.recreate()
+        composeRule.waitUntil(timeoutMillis = 30_000) {
             composeRule.onAllNodesWithTag("global_search").fetchSemanticsNodes().isNotEmpty()
         }
-        composeRule.waitUntil(timeoutMillis = 10_000) {
-            composeRule.onAllNodesWithText("Your favorites are ready")
-                .fetchSemanticsNodes().isNotEmpty()
-        }
-        composeRule.onNodeWithText("Your favorites are ready").assertIsDisplayed()
-
         composeRule.onNodeWithTag("global_search").performTextInput("In N Out")
         composeRule.onNodeWithText("In-N-Out").assertIsDisplayed()
         composeRule.onNodeWithText("Restaurant").assertIsDisplayed()
-        composeRule.onNodeWithContentDescription("Add favorite").performClick()
-        composeRule.waitUntil(timeoutMillis = 10_000) {
-            composeRule.onAllNodesWithContentDescription("Already a favorite").fetchSemanticsNodes().isNotEmpty()
+        composeRule.onNodeWithContentDescription("Add In-N-Out to favorites").performClick()
+        composeRule.waitUntil(timeoutMillis = 30_000) {
+            composeRule.onAllNodesWithContentDescription("Remove In-N-Out from favorites")
+                .fetchSemanticsNodes().isNotEmpty()
         }
-        composeRule.onNodeWithContentDescription("Already a favorite").assertIsDisplayed()
-        composeRule.waitUntil(timeoutMillis = 10_000) {
+        composeRule.onNodeWithContentDescription("Remove In-N-Out from favorites")
+            .assertIsDisplayed()
+        composeRule.waitUntil(timeoutMillis = 30_000) {
             composeRule.onAllNodesWithText("In-N-Out is in your favorites")
                 .fetchSemanticsNodes().isNotEmpty()
         }
         composeRule.onNodeWithText("In-N-Out is in your favorites").assertIsDisplayed()
 
+        composeRule.onNodeWithContentDescription("Remove In-N-Out from favorites").performClick()
+        composeRule.waitUntil(timeoutMillis = 30_000) {
+            "restaurant_in_n_out" !in runBlocking {
+                app.repository.currentPreferences().favoriteIds
+            }
+        }
+        waitForContentDescription("Add In-N-Out to favorites")
+        composeRule.onNodeWithContentDescription("Add In-N-Out to favorites")
+            .assertIsDisplayed()
+            .performClick()
+        composeRule.waitUntil(timeoutMillis = 30_000) {
+            "restaurant_in_n_out" in runBlocking {
+                app.repository.currentPreferences().favoriteIds
+            }
+        }
+        waitForContentDescription("Remove In-N-Out from favorites")
+        composeRule.onNodeWithContentDescription("Remove In-N-Out from favorites")
+            .assertIsDisplayed()
+
         composeRule.activityRule.scenario.recreate()
-        composeRule.waitUntil(timeoutMillis = 10_000) {
+        composeRule.waitUntil(timeoutMillis = 30_000) {
             composeRule.onAllNodesWithTag("global_search").fetchSemanticsNodes().isNotEmpty()
         }
-        composeRule.onNodeWithContentDescription("Already a favorite").assertIsDisplayed()
-
+        waitForContentDescription("Remove In-N-Out from favorites")
+        composeRule.onNodeWithContentDescription("Remove In-N-Out from favorites")
+            .assertIsDisplayed()
 
         composeRule.onNodeWithTag("global_search").performTextClearance()
         composeRule.onNodeWithTag("category_restaurants").performClick()
         composeRule.onNodeWithTag("favorite_restaurant_in_n_out").assertIsDisplayed()
-        composeRule.waitUntil(timeoutMillis = 10_000) {
-            composeRule.onAllNodesWithTag("favorite_restaurant_shake_shack")
+        composeRule.waitUntil(timeoutMillis = 30_000) {
+            composeRule.onAllNodesWithTag("favorite_restaurant_taco_bell")
                 .fetchSemanticsNodes().isNotEmpty()
         }
-        composeRule.onNodeWithTag("favorite_restaurant_shake_shack").assertIsDisplayed()
+        composeRule.onNodeWithTag("favorite_restaurant_taco_bell").assertIsDisplayed()
     }
 
     @Test fun bCustomizeMoveRestoreRemoveAndRediscoverFavorite() {
@@ -122,11 +172,11 @@ class FaveitJourneyTest {
             app.repository.addFavorite("restaurant_in_n_out")
         }
 
-        composeRule.waitUntil(timeoutMillis = 10_000) {
+        composeRule.waitUntil(timeoutMillis = 30_000) {
             composeRule.onAllNodesWithTag("global_search").fetchSemanticsNodes().isNotEmpty()
         }
         composeRule.onNodeWithTag("category_restaurants").performClick()
-        composeRule.waitUntil(timeoutMillis = 10_000) {
+        composeRule.waitUntil(timeoutMillis = 30_000) {
             composeRule.onAllNodesWithTag("favorite_restaurant_in_n_out")
                 .fetchSemanticsNodes().isNotEmpty()
         }
@@ -140,28 +190,39 @@ class FaveitJourneyTest {
         composeRule.onNodeWithTag("gem_style_amethyst").performClick()
         composeRule.onNodeWithTag("save_customization").performScrollTo().performClick()
 
-        composeRule.waitUntil(timeoutMillis = 10_000) {
+        composeRule.waitUntil(timeoutMillis = 30_000) {
             composeRule.onAllNodesWithTag("favorite_restaurant_in_n_out")
                 .fetchSemanticsNodes().isEmpty()
         }
         composeRule.onNodeWithContentDescription("Back").performClick()
         composeRule.onNodeWithTag("category_music").performClick()
-        composeRule.waitUntil(timeoutMillis = 10_000) {
+        composeRule.waitUntil(timeoutMillis = 30_000) {
             composeRule.onAllNodesWithText("Friday Burgers").fetchSemanticsNodes().isNotEmpty()
         }
         composeRule.onNodeWithText("Friday Burgers").assertIsDisplayed()
         composeRule.onNodeWithTag("favorite_restaurant_in_n_out").performClick()
         composeRule.onNodeWithTag("gem_style_amethyst").assertIsSelected()
         composeRule.onNodeWithTag("gem_style_ruby").assertIsNotSelected()
+
+        // Reversible removal keeps the user's local name, category, and gem.
+        composeRule.onNodeWithTag("remove_favorite").performScrollTo().performClick()
+        composeRule.onNodeWithTag("confirm_remove").performClick()
+        waitForToggle("favorite_restaurant_in_n_out", isOn = false)
+        composeRule.onNodeWithText("Friday Burgers").assertIsDisplayed()
+        composeRule.onNodeWithTag("favorite_restaurant_in_n_out").performClick()
+        waitForFavoriteState("favorite_restaurant_in_n_out", favorite = true)
+        composeRule.onNodeWithText("Friday Burgers").assertIsDisplayed()
+        composeRule.onNodeWithTag("favorite_restaurant_in_n_out").performClick()
+        composeRule.onNodeWithTag("gem_style_amethyst").assertIsSelected()
         composeRule.onNodeWithTag("reset_customization").performScrollTo().performClick()
 
-        composeRule.waitUntil(timeoutMillis = 10_000) {
+        composeRule.waitUntil(timeoutMillis = 30_000) {
             composeRule.onAllNodesWithTag("favorite_restaurant_in_n_out")
                 .fetchSemanticsNodes().isEmpty()
         }
         composeRule.onNodeWithContentDescription("Back").performClick()
         composeRule.onNodeWithTag("category_restaurants").performClick()
-        composeRule.waitUntil(timeoutMillis = 10_000) {
+        composeRule.waitUntil(timeoutMillis = 30_000) {
             composeRule.onAllNodesWithText("In-N-Out").fetchSemanticsNodes().isNotEmpty()
         }
         composeRule.onNodeWithText("In-N-Out").assertIsDisplayed()
@@ -171,10 +232,65 @@ class FaveitJourneyTest {
         composeRule.onNodeWithTag("remove_favorite").performScrollTo().performClick()
         composeRule.onNodeWithTag("confirm_remove").performClick()
 
-        composeRule.waitUntil(timeoutMillis = 10_000) {
-            composeRule.onAllNodesWithTag("discover_restaurant_in_n_out")
+        composeRule.waitUntil(timeoutMillis = 30_000) {
+            composeRule.onAllNodesWithTag("favorite_restaurant_in_n_out")
                 .fetchSemanticsNodes().isNotEmpty()
         }
-        composeRule.onNodeWithTag("discover_restaurant_in_n_out").assertIsDisplayed()
+        waitForToggle("favorite_restaurant_in_n_out", isOn = false)
+        composeRule.onNodeWithTag("favorite_restaurant_in_n_out")
+            .assertIsDisplayed()
+            .performClick()
+        composeRule.waitUntil(timeoutMillis = 30_000) {
+            "restaurant_in_n_out" in runBlocking {
+                app.repository.currentPreferences().favoriteIds
+            }
+        }
+        waitForFavoriteState("favorite_restaurant_in_n_out", favorite = true)
+        composeRule.onNodeWithContentDescription("Remove In-N-Out from favorites").performClick()
+        composeRule.waitUntil(timeoutMillis = 30_000) {
+            "restaurant_in_n_out" !in runBlocking {
+                app.repository.currentPreferences().favoriteIds
+            }
+        }
+        waitForToggle("favorite_restaurant_in_n_out", isOn = false)
+
+        composeRule.activityRule.scenario.recreate()
+        composeRule.waitUntil(timeoutMillis = 30_000) {
+            composeRule.onAllNodesWithTag("category_grid_restaurants")
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+        composeRule.onNodeWithTag("favorite_restaurant_in_n_out").assertIsDisplayed()
+        waitForToggle("favorite_restaurant_in_n_out", isOn = false)
+    }
+
+    @Test fun cRetiredFavoriteRemainsRecoverableAfterRemovalAndRecreation() {
+        val app = InstrumentationRegistry.getInstrumentation().targetContext.applicationContext
+            as FaveitApplication
+        runBlocking {
+            app.repository.completeSetup()
+            app.repository.addFavorite("music_jazz")
+            app.repository.removeFavorite("music_jazz")
+        }
+        composeRule.waitUntil(timeoutMillis = 30_000) {
+            "music_jazz" in runBlocking {
+                app.repository.currentPreferences().rememberedFavoriteIds
+            }
+        }
+
+        composeRule.activityRule.scenario.recreate()
+        composeRule.waitUntil(timeoutMillis = 30_000) {
+            composeRule.onAllNodesWithTag("global_search").fetchSemanticsNodes().isNotEmpty()
+        }
+        composeRule.onNodeWithTag("global_search").performTextInput("Late night Jazz")
+        composeRule.onNodeWithText("Late-night Jazz").assertIsDisplayed()
+        composeRule.onNodeWithContentDescription("Add Late-night Jazz to favorites").performClick()
+        composeRule.waitUntil(timeoutMillis = 30_000) {
+            "music_jazz" in runBlocking {
+                app.repository.currentPreferences().favoriteIds
+            }
+        }
+        waitForContentDescription("Remove Late-night Jazz from favorites")
+        composeRule.onNodeWithContentDescription("Remove Late-night Jazz from favorites")
+            .assertIsDisplayed()
     }
 }

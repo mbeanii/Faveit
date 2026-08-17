@@ -32,11 +32,13 @@ favorites and customizations stored locally by that installation.
    **Start now**. Notice whether selection depth, haptic feedback, and the
    confirmation feel satisfying rather than noisy.
 2. Search for `In N Out`, confirm that the result says **Restaurant**, and tap
-   Add once. The app should confirm `In-N-Out is in your favorites`.
-3. Clear search, open **Restaurants**, and judge whether your two choices are
-   readable at conversational speed.
-4. Tap a favorite to rename it, move its category, change its gem, reset it,
-   and remove it. The muted discovery section should make it easy to add back.
+   Add once. Tap the resulting checkmark to remove it, then add it again; both
+   directions should take one tap.
+3. Clear search, open **Restaurants**, and judge whether favorites remain
+   readable at conversational speed with the full catalog bundled.
+4. Tap a favorite's red X. It should stay exactly where it was, turn grey, and
+   re-add when tapped. Tap the body of a saved tile to rename it, move its
+   category, change its gem, or reset it.
 5. Only if useful, open the bell and opt into the restrained weekly local
    reminder. Notification delivery is intentionally not enabled by default.
 

@@ -4,21 +4,27 @@ Faveit is a fast, local-first Android prototype for remembering the things you
 already love. It is designed for the moment when someone asks, “Where should we
 eat?” and every restaurant name suddenly disappears from your head.
 
-The MVP is intentionally not a recommendation feed, marketplace, account
-system, or advertising surface. The user’s own favorites are the authority.
+Faveit is intentionally not an engagement feed, marketplace, account system,
+or advertising surface. Its small discovery batches are computed locally from
+the user’s explicit choices; the user’s own favorites remain the authority.
 
 ## What is implemented
 
-- An eight-category first-run picker with 96 bundled demonstration entries;
-  one selection is enough to use `Start now`, while browsing every category
-  remains available.
+- An eight-category catalog with 1,680 bundled, researched choices: 210 specific
+  entries and 21 meaningful facets per category.
+- A quick first-run picker that begins with 12 popular, deliberately different
+  choices and reveals 12-item related/exploratory batches on demand. One
+  selection is enough to use `Start now`.
 - A home screen where all categories remain visible at once.
-- Punctuation-, alias-, and diacritic-tolerant global search.
-- One-tap rapid add: searching `In N Out` finds `In-N-Out` as a Restaurant.
+- A reusable pre-normalized search index with punctuation-, alias-, and
+  diacritic-tolerant lookup across the full bundled catalog.
+- One-tap rapid add and remove: searching `In N Out` finds `In-N-Out` as a
+  Restaurant; the plus/check control toggles it without opening a form.
 - Persistence-confirmed emerald feedback for setup and rapid add, including
   accessible live-region announcements.
 - Favorites-first category recall grids with a visually separated discovery
-  section.
+  section. A red corner X removes in one tap without moving the tile; the greyed
+  tile can be re-added in place, while the body of a saved tile opens editing.
 - Local favorite removal, renaming, category reassignment, gem-style changes,
   and restoration of catalog defaults.
 - Explicitly opt-in, non-annoying weekly local reminders in the form
@@ -54,9 +60,11 @@ Validation commands:
 
 ## Project map
 
-- `app/src/main/assets/catalog.json` — replaceable bundled master catalog.
-- `app/src/main/java/com/faveit/app/data` — catalog loading, ranked search,
-  DataStore persistence, and favorite resolution.
+- `tools/catalog/generate_catalog.py` — canonical, validated catalog source.
+- `app/src/main/assets/catalog.json` — generated bundled master catalog.
+- `app/src/main/java/com/faveit/app/data` — catalog loading, indexed ranked
+  search, transparent local discovery, DataStore persistence, and favorite
+  resolution.
 - `app/src/main/java/com/faveit/app/ui` — Compose app flow, screens, gem
   components, and visual theme.
 - `app/src/main/java/com/faveit/app/notifications` — opt-in WorkManager schedule
@@ -75,5 +83,8 @@ OS-managed device backup or transfer; Faveit itself sends nothing anywhere.
 
 To replace or extend the prototype catalog, retain the schema in
 `catalog.json`: stable `id`, display `name`, category wire name, safe visual
-`emoji`, `palette`, and optional search `aliases`. The loader enforces unique
-IDs and coverage of all categories.
+`emoji`, `palette`, optional search `aliases`, `facet`, content `tags`, and a
+category-local `popularity` rank. Edit the canonical generator rather than the
+generated JSON. The generator and loader enforce uniqueness and category
+coverage. Research and curation notes are in
+[`docs/catalog_sources.md`](docs/catalog_sources.md).
